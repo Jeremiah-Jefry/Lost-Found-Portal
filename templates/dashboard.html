@@ -1,149 +1,383 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - KG Portal{% endblock %}
+{% block title %}Dashboard — KG Recovery Portal{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<!-- Stat Cards -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-10">
-    <div class="bg-white rounded-2xl p-5 md:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+
+{# ─── Computed helpers ───────────────────────────────────────────────────── #}
+{% set total = total_lost + total_found %}
+{% set rate  = ((total_found / total) * 100)|int if total > 0 else 0 %}
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 1 — Premium Analytics Widgets
+     Each card has:
+       • Coloured left-accent stripe (stat-card + stat-*)
+       • data-count attr consumed by the global countUp() JS
+       • Animated progress bar driven by inline width
+       • Hover lift via Tailwind group + translate
+ ══════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5 mb-10">
+
+    <!-- Total Reports -->
+    <div class="stat-card stat-blue bg-white rounded-2xl p-5 md:p-6 border border-gray-100
+                shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
         <div class="flex items-start justify-between mb-4">
-            <p class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Total Reports</p>
-            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
-                <i class="bi bi-stack text-brand text-lg"></i>
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <i class="fa-solid fa-layer-group text-brand text-sm"></i>
             </div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">Total</span>
         </div>
-        <h3 class="text-3xl font-extrabold text-gray-900">{{ total_lost + total_found }}</h3>
-        <p class="text-[11px] text-gray-400 mt-1 font-medium">All time submissions</p>
+        <p class="text-3xl font-extrabold text-gray-900 tabular-nums" data-count="{{ total }}">{{ total }}</p>
+        <p class="text-xs text-gray-400 mt-1 font-medium">Reports all-time</p>
+        <div class="mt-3.5 h-1 bg-gray-100 rounded-full">
+            <div class="h-full bg-brand rounded-full transition-all duration-700" style="width:100%"></div>
+        </div>
     </div>
-    <div class="bg-white rounded-2xl p-5 md:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+
+    <!-- Items Lost -->
+    <div class="stat-card stat-red bg-white rounded-2xl p-5 md:p-6 border border-gray-100
+                shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
         <div class="flex items-start justify-between mb-4">
-            <p class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Items Lost</p>
-            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition-colors shrink-0">
-                <i class="bi bi-exclamation-circle-fill text-red-500 text-lg"></i>
+            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                <i class="fa-solid fa-circle-exclamation text-red-500 text-sm"></i>
             </div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">Lost</span>
         </div>
-        <h3 class="text-3xl font-extrabold text-red-500">{{ total_lost }}</h3>
-        <p class="text-[11px] text-gray-400 mt-1 font-medium">Active reports pending</p>
+        <p class="text-3xl font-extrabold text-red-500 tabular-nums" data-count="{{ total_lost }}">{{ total_lost }}</p>
+        <p class="text-xs text-gray-400 mt-1 font-medium">Pending recovery</p>
+        <div class="mt-3.5 h-1 bg-gray-100 rounded-full">
+            <div class="h-full bg-red-400 rounded-full transition-all duration-700"
+                 style="width:{{ ((total_lost / total * 100)|int if total > 0 else 0) }}%"></div>
+        </div>
     </div>
-    <div class="bg-white rounded-2xl p-5 md:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+
+    <!-- Items Found -->
+    <div class="stat-card stat-green bg-white rounded-2xl p-5 md:p-6 border border-gray-100
+                shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
         <div class="flex items-start justify-between mb-4">
-            <p class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Items Found</p>
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors shrink-0">
-                <i class="bi bi-check-circle-fill text-emerald-500 text-lg"></i>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
             </div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">Found</span>
         </div>
-        <h3 class="text-3xl font-extrabold text-emerald-500">{{ total_found }}</h3>
-        <p class="text-[11px] text-gray-400 mt-1 font-medium">Secured or handed over</p>
+        <p class="text-3xl font-extrabold text-emerald-500 tabular-nums" data-count="{{ total_found }}">{{ total_found }}</p>
+        <p class="text-xs text-gray-400 mt-1 font-medium">Secured / returned</p>
+        <div class="mt-3.5 h-1 bg-gray-100 rounded-full">
+            <div class="h-full bg-emerald-400 rounded-full transition-all duration-700"
+                 style="width:{{ ((total_found / total * 100)|int if total > 0 else 0) }}%"></div>
+        </div>
     </div>
-    <div class="bg-white rounded-2xl p-5 md:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
+
+    <!-- Resolution Rate -->
+    <div class="stat-card stat-violet bg-white rounded-2xl p-5 md:p-6 border border-gray-100
+                shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
         <div class="flex items-start justify-between mb-4">
-            <p class="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Resolution Rate</p>
-            <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition-colors shrink-0">
-                <i class="bi bi-graph-up-arrow text-violet-500 text-lg"></i>
+            <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+                <i class="fa-solid fa-arrow-trend-up text-violet-500 text-sm"></i>
             </div>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-1">Rate</span>
         </div>
-        {% set total = total_lost + total_found %}
-        <h3 class="text-3xl font-extrabold text-gray-900">{% if total > 0 %}{{ ((total_found / total) * 100)|int }}{% else %}0{% endif %}<span class="text-lg text-gray-400 font-semibold">%</span></h3>
-        <p class="text-[11px] text-gray-400 mt-1 font-medium">Found vs total ratio</p>
+        <p class="text-3xl font-extrabold text-gray-900 tabular-nums">
+            <span data-count="{{ rate }}">{{ rate }}</span><span class="text-lg text-gray-400 font-semibold ml-0.5">%</span>
+        </p>
+        <p class="text-xs text-gray-400 mt-1 font-medium">Found ÷ total items</p>
+        <div class="mt-3.5 h-1 bg-gray-100 rounded-full">
+            <div class="h-full bg-violet-400 rounded-full transition-all duration-700"
+                 style="width:{{ rate }}%"></div>
+        </div>
     </div>
+
 </div>
 
-<!-- Content Section -->
-{% if current_user.is_authenticated %}
-    {% if my_items %}
-    <div class="mb-5 flex items-end justify-between">
-        <div>
-            <h2 class="text-xl font-bold text-gray-900">My Active Reports</h2>
-            <p class="text-sm text-gray-400 mt-0.5">Items you are currently tracking.</p>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 2 — Auto-Match Engine Results
+     Only visible to logged-in users with pending matches.
+     Each card links the user's LOST item to a potential FOUND item.
+ ══════════════════════════════════════════════════════════ -->
+{% if current_user.is_authenticated and pending_matches %}
+<div class="mb-10">
+
+    <!-- Section header -->
+    <div class="flex items-center gap-3 mb-5">
+        <div class="relative">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <i class="fa-solid fa-bolt text-amber-500 text-sm"></i>
+            </div>
+            <!-- Badge showing count -->
+            <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white
+                         text-[9px] font-extrabold flex items-center justify-center shadow-sm">
+                {{ pending_matches|length }}
+            </span>
         </div>
-        <a href="{{ url_for('report') }}" class="text-sm font-semibold text-brand hover:text-brand-dark transition-colors flex items-center gap-1"><i class="bi bi-plus-circle"></i> New</a>
+        <div>
+            <h2 class="text-lg font-bold text-gray-900">Auto-Match Results</h2>
+            <p class="text-xs text-gray-400 mt-0.5">
+                The recovery engine found potential matches for your lost items.
+            </p>
+        </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {% for item in my_items %}
-        <a href="{{ url_for('item_detail', item_id=item.id) }}" class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 block group">
-            <div class="h-40 relative overflow-hidden bg-gray-50">
-                {% if item.image_filename %}
-                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                {% else %}
-                <div class="w-full h-full flex items-center justify-center"><i class="bi bi-image text-4xl text-gray-200"></i></div>
-                {% endif %}
-                <div class="absolute top-3 right-3">
-                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider shadow-sm {% if item.status == 'LOST' %}bg-red-500 text-white{% else %}bg-emerald-500 text-white{% endif %}">{{ item.status_label }}</span>
+
+    <!-- Match cards grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for match in pending_matches %}
+        <div class="bg-white rounded-2xl border border-amber-200 shadow-card overflow-hidden relative">
+            <!-- Top accent stripe — colour driven by score -->
+            <div class="h-0.5 w-full
+                {% if match.score >= 5 %}bg-gradient-to-r from-emerald-400 to-teal-400
+                {% elif match.score >= 3 %}bg-gradient-to-r from-amber-400 to-orange-400
+                {% else %}bg-gradient-to-r from-blue-300 to-blue-400{% endif %}"></div>
+
+            <div class="p-5">
+                <div class="flex items-start gap-4">
+
+                    <!-- Found item thumbnail -->
+                    <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+                        {% if match.found_item.image_filename %}
+                        <img src="{{ url_for('static', filename='uploads/' + match.found_item.image_filename) }}"
+                             alt="{{ match.found_item.title }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fa-solid fa-image text-2xl text-gray-300"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Match detail -->
+                    <div class="flex-1 min-w-0">
+                        <!-- Strength badge -->
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                {% if match.score >= 5 %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                {% elif match.score >= 3 %}bg-amber-50  text-amber-700  border border-amber-200
+                                {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                                <i class="fa-solid fa-bolt text-[8px]"></i>
+                                {{ match.strength_label }}
+                            </span>
+                            <!-- Score meter -->
+                            <div class="flex items-center gap-1">
+                                {% for i in range(5) %}
+                                <div class="w-2.5 h-2.5 rounded-sm
+                                    {% if i < match.score %}bg-amber-400{% else %}bg-gray-100{% endif %}"></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <p class="text-sm font-bold text-gray-900 truncate">{{ match.found_item.title }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot text-gray-300 text-[10px]"></i>
+                            <span class="truncate">{{ match.found_item.location }}</span>
+                        </p>
+
+                        <!-- "Matches your lost:" sub-line -->
+                        <p class="text-xs text-gray-500 mt-2 leading-snug">
+                            Matches your lost item:
+                            <span class="font-semibold text-gray-700">{{ match.lost_item.title }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action row -->
+                <div class="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <a href="{{ url_for('item_detail', item_id=match.found_item.id) }}"
+                       class="flex-1 text-center py-2 text-xs font-semibold text-brand bg-blue-50
+                              rounded-lg hover:bg-brand hover:text-white transition-all border border-blue-100 hover:border-brand">
+                        View Found Item <i class="fa-solid fa-arrow-right ml-1 text-[10px]"></i>
+                    </a>
+                    <!-- Dismiss (soft-delete via POST) -->
+                    <form method="POST" action="{{ url_for('dismiss_match', match_id=match.id) }}">
+                        <button type="submit" title="Dismiss this suggestion"
+                                class="px-3 py-2 text-xs text-gray-400 hover:text-red-500 hover:bg-red-50
+                                       rounded-lg transition-colors border border-transparent hover:border-red-100">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
-            <div class="p-4">
-                <p class="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">{{ item.category_label }}</p>
-                <h3 class="text-sm font-bold text-gray-900 truncate group-hover:text-brand transition-colors">{{ item.title }}</h3>
-                <div class="flex items-center text-xs text-gray-400 mt-1.5"><i class="bi bi-geo-alt text-gray-300 mr-1"></i><span class="truncate">{{ item.location[:30] }}</span></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 3 — My Active Reports  (authenticated users)
+ ══════════════════════════════════════════════════════════ -->
+{% if current_user.is_authenticated %}
+<div class="mb-10">
+    <div class="flex items-end justify-between mb-5">
+        <div>
+            <h2 class="text-lg font-bold text-gray-900">My Reports</h2>
+            <p class="text-sm text-gray-400 mt-0.5">Items you have reported.</p>
+        </div>
+        <a href="{{ url_for('report') }}"
+           class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-dark transition-colors">
+            <i class="fa-solid fa-circle-plus text-xs"></i> New Report
+        </a>
+    </div>
+
+    {% if my_items %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for item in my_items %}
+        <a href="{{ url_for('item_detail', item_id=item.id) }}"
+           class="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover
+                  hover:-translate-y-1 transition-all duration-300 overflow-hidden group block">
+            <!-- Image -->
+            <div class="h-36 bg-gray-50 relative overflow-hidden">
+                {% if item.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                     alt="{{ item.title }}"
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fa-solid fa-image text-4xl text-gray-200"></i>
+                </div>
+                {% endif %}
+                <!-- Status pill -->
+                <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase
+                             tracking-wider shadow-sm
+                    {% if item.status == 'LOST' %}bg-red-500 text-white{% else %}bg-emerald-500 text-white{% endif %}">
+                    {{ item.status_label }}
+                </span>
             </div>
-            <div class="px-4 pb-3">
-                <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <span class="text-[10px] text-gray-400"><i class="bi bi-clock mr-0.5"></i>{{ item.date_reported|timesince }} ago</span>
-                    <span class="text-xs font-bold text-brand">View →</span>
+            <!-- Body -->
+            <div class="p-4 pb-3">
+                <p class="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">{{ item.category_label }}</p>
+                <h3 class="text-sm font-bold text-gray-900 truncate group-hover:text-brand transition-colors">
+                    {{ item.title }}
+                </h3>
+                <p class="text-xs text-gray-400 mt-1 flex items-center gap-1 truncate">
+                    <i class="fa-solid fa-location-dot text-gray-300 text-[10px]"></i>
+                    {{ item.location }}
+                </p>
+            </div>
+            <div class="px-4 pb-4 flex items-center justify-between border-t border-gray-100 pt-3">
+                <span class="text-[10px] text-gray-400">
+                    <i class="fa-regular fa-clock mr-1"></i>{{ item.date_reported|timesince }}
+                </span>
+                <span class="text-xs font-bold text-brand">View →</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
+        <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-inbox text-3xl text-brand/50"></i>
+        </div>
+        <h3 class="text-base font-bold text-gray-800 mb-1.5">No Reports Yet</h3>
+        <p class="text-sm text-gray-400 max-w-xs mx-auto mb-6">
+            Help the campus community by reporting a lost or found item.
+        </p>
+        <a href="{{ url_for('report') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold
+                  rounded-xl hover:bg-brand-dark transition-colors shadow-md shadow-blue-200/60">
+            <i class="fa-solid fa-plus text-xs"></i> Report Your First Item
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- Unauthenticated CTA -->
+<div class="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-card mb-10">
+    <div class="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-lock text-3xl text-gray-300"></i>
+    </div>
+    <h3 class="text-base font-bold text-gray-800 mb-1.5">Sign In to Get Started</h3>
+    <p class="text-sm text-gray-400 max-w-sm mx-auto mb-6">
+        Sign in to submit reports, track your lost items, and receive
+        Auto-Match notifications from the recovery engine.
+    </p>
+    <div class="flex items-center justify-center gap-3">
+        <a href="{{ url_for('login') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold
+                  rounded-xl hover:bg-brand-dark transition-colors shadow-md shadow-blue-200/60">
+            <i class="fa-solid fa-right-to-bracket text-sm"></i> Sign In
+        </a>
+        <a href="{{ url_for('register') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-600
+                  text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+            Create Account
+        </a>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 4 — Recent Campus Activity  (public)
+ ══════════════════════════════════════════════════════════ -->
+{% if recent_items %}
+<div>
+    <div class="flex items-end justify-between mb-5">
+        <div>
+            <h2 class="text-lg font-bold text-gray-900">Recent Campus Activity</h2>
+            <p class="text-sm text-gray-400 mt-0.5">Latest reports across all locations.</p>
+        </div>
+        <a href="{{ url_for('feed') }}"
+           class="text-sm font-semibold text-brand hover:text-brand-dark transition-colors">
+            View All Feed →
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for item in recent_items %}
+        <a href="{{ url_for('item_detail', item_id=item.id) }}"
+           class="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover
+                  hover:-translate-y-1 transition-all duration-300 overflow-hidden group block">
+            <div class="h-32 bg-gray-50 relative overflow-hidden">
+                {% if item.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}"
+                     alt="{{ item.title }}"
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fa-solid fa-image text-3xl text-gray-200"></i>
+                </div>
+                {% endif %}
+                <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm
+                    {% if item.status == 'LOST' %}bg-red-500 text-white{% else %}bg-emerald-500 text-white{% endif %}">
+                    {{ item.status_label }}
+                </span>
+            </div>
+            <div class="p-4">
+                <h3 class="text-sm font-bold text-gray-900 truncate group-hover:text-brand transition-colors mb-1">
+                    {{ item.title }}
+                </h3>
+                <p class="text-xs text-gray-400 flex items-center gap-1 truncate">
+                    <i class="fa-solid fa-location-dot text-gray-300 text-[10px]"></i>
+                    {{ item.location }}
+                </p>
+                <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-100">
+                    <span class="text-[10px] text-gray-400">
+                        <i class="fa-regular fa-clock mr-1"></i>{{ item.date_reported|timesince }}
+                    </span>
+                    <span class="text-[10px] text-gray-400">
+                        <i class="fa-solid fa-user text-gray-300 mr-1"></i>{{ item.reporter.username }}
+                    </span>
                 </div>
             </div>
         </a>
         {% endfor %}
     </div>
-    {% else %}
-    <div class="bg-white rounded-2xl p-14 text-center border-2 border-dashed border-gray-200">
-        <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-6">
-            <i class="bi bi-inbox text-4xl text-brand/70"></i>
-        </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">No Reports Yet</h3>
-        <p class="text-gray-400 max-w-sm mx-auto mb-6 text-sm">You haven't reported any items yet. Start by reporting something lost or found on campus!</p>
-        <a href="{{ url_for('report') }}" class="inline-flex items-center px-6 py-3 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-colors shadow-md shadow-brand/20 text-sm gap-2">
-            <i class="bi bi-plus-lg"></i> Report Your First Item
-        </a>
-    </div>
-    {% endif %}
 
 {% else %}
-<div class="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
-    <div class="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-6 border border-gray-100">
-        <i class="bi bi-lock text-4xl text-gray-300"></i>
+<!-- Global empty state -->
+<div class="bg-white rounded-2xl p-16 text-center border border-gray-100 shadow-card">
+    <div class="w-20 h-20 rounded-2xl bg-gray-50 border border-gray-100
+                flex items-center justify-center mx-auto mb-5">
+        <i class="fa-solid fa-box-open text-4xl text-gray-300"></i>
     </div>
-    <h3 class="text-xl font-bold text-gray-900 mb-2">Sign In Required</h3>
-    <p class="text-gray-400 max-w-sm mx-auto mb-6 text-sm">Sign in or create an account to view your personal reports and manage items on the portal.</p>
-    <a href="{{ url_for('login') }}" class="inline-flex items-center px-6 py-3 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-colors shadow-md shadow-brand/20 text-sm gap-2">
-        <i class="bi bi-box-arrow-in-right"></i> Sign In
-    </a>
+    <h3 class="text-lg font-bold text-gray-700 mb-2">No Items Reported Yet</h3>
+    <p class="text-sm text-gray-400 max-w-sm mx-auto">
+        The portal is ready. Be the first to submit a report and help
+        the campus community.
+    </p>
 </div>
 {% endif %}
 
-<!-- Recent Activity (Visible to everyone) -->
-{% if recent_items %}
-<div class="mt-10 mb-5">
-    <div class="flex items-end justify-between">
-        <div>
-            <h2 class="text-xl font-bold text-gray-900">Recent Activity</h2>
-            <p class="text-sm text-gray-400 mt-0.5">Latest items reported across campus.</p>
-        </div>
-        <a href="{{ url_for('feed') }}" class="text-sm font-semibold text-brand hover:text-brand-dark transition-colors">View All →</a>
-    </div>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-    {% for item in recent_items %}
-    <a href="{{ url_for('item_detail', item_id=item.id) }}" class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 block group">
-        <div class="h-36 relative overflow-hidden bg-gray-50">
-            {% if item.image_filename %}
-            <img src="{{ url_for('static', filename='uploads/' + item.image_filename) }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            {% else %}
-            <div class="w-full h-full flex items-center justify-center"><i class="bi bi-image text-4xl text-gray-200"></i></div>
-            {% endif %}
-            <div class="absolute top-3 right-3">
-                <span class="px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider shadow-sm {% if item.status == 'LOST' %}bg-red-500 text-white{% else %}bg-emerald-500 text-white{% endif %}">{{ item.status_label }}</span>
-            </div>
-        </div>
-        <div class="p-4">
-            <h3 class="text-sm font-bold text-gray-900 truncate group-hover:text-brand transition-colors">{{ item.title }}</h3>
-            <div class="flex items-center justify-between mt-2">
-                <span class="text-[10px] text-gray-400"><i class="bi bi-clock mr-0.5"></i>{{ item.date_reported|timesince }} ago</span>
-                <span class="text-[10px] text-gray-400">by {{ item.reporter.username }}</span>
-            </div>
-        </div>
-    </a>
-    {% endfor %}
-</div>
-{% endif %}
 {% endblock %}

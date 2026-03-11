@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Server Error — KG Recovery Portal{% endblock %}
+{% block page_title %}500{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[65vh]">
+    <div class="text-center max-w-md">
+
+        <!-- Illustration -->
+        <div class="w-24 h-24 rounded-3xl bg-red-50 border border-red-100
+                    flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-400/70"></i>
+        </div>
+
+        <!-- Code + headline -->
+        <p class="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">Error 500</p>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
+            Something Went Wrong
+        </h1>
+        <p class="text-gray-400 text-sm leading-relaxed mb-8 max-w-xs mx-auto">
+            An unexpected server error occurred. The database session has been
+            safely reset. Please try again — if the issue persists, contact support.
+        </p>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-center gap-3 flex-wrap">
+            <a href="{{ url_for('dashboard') }}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm
+                      font-semibold rounded-xl hover:bg-brand-dark transition-colors shadow-md shadow-blue-200/60">
+                <i class="fa-solid fa-house text-xs"></i> Go to Dashboard
+            </a>
+            <a href="javascript:history.back()"
+               class="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200
+                      text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-rotate-right text-xs text-gray-400"></i> Try Again
+            </a>
+        </div>
+
+        <!-- Technical note (subdued, non-alarming for demo) -->
+        <p class="mt-10 text-[11px] text-gray-300 font-mono">
+            The database transaction has been rolled back automatically.
+        </p>
+    </div>
+</div>
+{% endblock %}
