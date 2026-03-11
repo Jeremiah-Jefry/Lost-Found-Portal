@@ -114,6 +114,75 @@
                                    transition-all text-sm resize-none">{{ item.description }}</textarea>
                     </div>
 
+                    <!-- Handover / Custody (FOUND items only) -->
+                    <div id="handover-section"
+                         class="mb-5 border border-amber-200 rounded-2xl overflow-hidden
+                                {% if item.status != 'FOUND' %}hidden{% endif %}">
+                        <div class="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-amber-500 text-sm"></i>
+                            <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">
+                                Handover &amp; Custody
+                            </span>
+                        </div>
+                        <div class="p-5 space-y-4">
+                            <!-- Custody Status -->
+                            <div>
+                                <label for="handover_status" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                    Custody Status
+                                </label>
+                                <div class="relative">
+                                    <select name="handover_status" id="handover_status"
+                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700
+                                               focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-brand
+                                               transition-all text-sm cursor-pointer appearance-none">
+                                        <option value="" {% if not item.handover_status %}selected{% endif %}>— Not specified —</option>
+                                        <option value="LEFT_AT_LOCATION" {% if item.handover_status == 'LEFT_AT_LOCATION' %}selected{% endif %}>Left at Location</option>
+                                        <option value="WITH_FINDER"      {% if item.handover_status == 'WITH_FINDER'      %}selected{% endif %}>Item is with Me (Finder)</option>
+                                        <option value="SECURITY"         {% if item.handover_status == 'SECURITY'         %}selected{% endif %}>Handed Over to Security</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <!-- Security officer details — shown only when SECURITY selected -->
+                            <div id="security-details"
+                                 class="grid grid-cols-1 sm:grid-cols-2 gap-4
+                                        {% if item.handover_status != 'SECURITY' %}hidden{% endif %}">
+                                <div>
+                                    <label for="receiver_name" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                        Security Officer Name
+                                    </label>
+                                    <input type="text" name="receiver_name" id="receiver_name"
+                                           value="{{ item.receiver_name or '' }}"
+                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800
+                                               focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-brand
+                                               transition-all text-sm">
+                                </div>
+                                <div>
+                                    <label for="receiver_contact" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                        Officer Contact
+                                    </label>
+                                    <input type="text" name="receiver_contact" id="receiver_contact"
+                                           value="{{ item.receiver_contact or '' }}"
+                                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800
+                                               focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-brand
+                                               transition-all text-sm">
+                                </div>
+                            </div>
+
+                            <!-- Handover Notes -->
+                            <div>
+                                <label for="handover_details" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                                    Notes <span class="text-gray-400 font-normal text-xs">(Optional)</span>
+                                </label>
+                                <textarea name="handover_details" id="handover_details" rows="2"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800
+                                           focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-brand
+                                           transition-all text-sm resize-none">{{ item.handover_details or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Photo -->
                     <div class="mb-6">
                         <label class="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -148,4 +217,23 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    const statusSel   = document.getElementById('status');
+    const handoverSec = document.getElementById('handover-section');
+    const handoverSel = document.getElementById('handover_status');
+    const secDetails  = document.getElementById('security-details');
+
+    function toggleHandover() {
+        handoverSec.classList.toggle('hidden', statusSel.value !== 'FOUND');
+    }
+    function toggleSecurity() {
+        secDetails.classList.toggle('hidden', handoverSel.value !== 'SECURITY');
+    }
+
+    statusSel.addEventListener('change',   toggleHandover);
+    handoverSel.addEventListener('change', toggleSecurity);
+})();
+</script>
 {% endblock %}

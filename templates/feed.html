@@ -30,9 +30,10 @@
                            placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-brand
                            transition-all text-sm">
             </div>
-            <!-- Keep current_status in hidden input so search preserves it -->
+            <!-- Keep active filters so search doesn't reset them -->
             {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
             {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+            {% if current_resolution %}<input type="hidden" name="resolution" value="{{ current_resolution }}">{% endif %}
             <button type="submit"
                 class="px-5 py-2.5 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-all text-sm shadow-sm shrink-0">
                 Search
@@ -42,15 +43,15 @@
         <!-- Filter Pills -->
         <div class="flex flex-wrap gap-2 items-center">
             <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mr-1">Status:</span>
-            <a href="{{ url_for('feed', q=query, category=current_category) }}"
+            <a href="{{ url_for('feed', q=query, category=current_category, resolution=current_resolution) }}"
                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
                       {% if not current_status %}bg-brand text-white border-brand{% else %}text-gray-500 border-gray-200 hover:bg-gray-50{% endif %}">All</a>
-            <a href="{{ url_for('feed', q=query, status='LOST', category=current_category) }}"
+            <a href="{{ url_for('feed', q=query, status='LOST', category=current_category, resolution=current_resolution) }}"
                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
                       {% if current_status == 'LOST' %}bg-red-500 text-white border-red-500{% else %}text-gray-500 border-gray-200 hover:bg-red-50 hover:text-red-500{% endif %}">
                 <i class="fa-solid fa-circle-exclamation mr-1 text-[10px]"></i>Lost
             </a>
-            <a href="{{ url_for('feed', q=query, status='FOUND', category=current_category) }}"
+            <a href="{{ url_for('feed', q=query, status='FOUND', category=current_category, resolution=current_resolution) }}"
                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
                       {% if current_status == 'FOUND' %}bg-emerald-500 text-white border-emerald-500{% else %}text-gray-500 border-gray-200 hover:bg-emerald-50 hover:text-emerald-500{% endif %}">
                 <i class="fa-solid fa-circle-check mr-1 text-[10px]"></i>Found
@@ -58,12 +59,32 @@
 
             <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-3 mr-1">Category:</span>
             {% for val, label in [('ELECTRONICS','Electronics'), ('DOCUMENTS','Documents'), ('KEYS','Keys'), ('CLOTHING','Clothing'), ('OTHER','Other')] %}
-            <a href="{{ url_for('feed', q=query, status=current_status, category=val) }}"
+            <a href="{{ url_for('feed', q=query, status=current_status, category=val, resolution=current_resolution) }}"
                class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
                       {% if current_category == val %}bg-brand text-white border-brand{% else %}text-gray-400 border-gray-200 hover:bg-blue-50 hover:text-brand{% endif %}">
                 {{ label }}
             </a>
             {% endfor %}
+
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-3 mr-1">Case:</span>
+            <a href="{{ url_for('feed', q=query, status=current_status, category=current_category) }}"
+               class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
+                      {% if not current_resolution %}bg-brand text-white border-brand{% else %}text-gray-500 border-gray-200 hover:bg-gray-50{% endif %}">All</a>
+            <a href="{{ url_for('feed', q=query, status=current_status, category=current_category, resolution='OPEN') }}"
+               class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
+                      {% if current_resolution == 'OPEN' %}bg-blue-500 text-white border-blue-500{% else %}text-gray-500 border-gray-200 hover:bg-blue-50 hover:text-blue-500{% endif %}">
+                <i class="fa-solid fa-hourglass-half mr-1 text-[10px]"></i>Open
+            </a>
+            <a href="{{ url_for('feed', q=query, status=current_status, category=current_category, resolution='SECURED') }}"
+               class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
+                      {% if current_resolution == 'SECURED' %}bg-amber-500 text-white border-amber-500{% else %}text-gray-500 border-gray-200 hover:bg-amber-50 hover:text-amber-500{% endif %}">
+                <i class="fa-solid fa-shield-halved mr-1 text-[10px]"></i>Secured
+            </a>
+            <a href="{{ url_for('feed', q=query, status=current_status, category=current_category, resolution='RETURNED') }}"
+               class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border
+                      {% if current_resolution == 'RETURNED' %}bg-emerald-500 text-white border-emerald-500{% else %}text-gray-500 border-gray-200 hover:bg-emerald-50 hover:text-emerald-500{% endif %}">
+                <i class="fa-solid fa-check-double mr-1 text-[10px]"></i>Returned
+            </a>
         </div>
     </form>
 </div>
@@ -75,7 +96,7 @@
         <i class="fa-solid fa-filter text-brand mr-2 text-xs"></i>
         Results for: <strong>"{{ query }}"</strong>
     </p>
-    <a href="{{ url_for('feed', status=current_status, category=current_category) }}"
+    <a href="{{ url_for('feed', status=current_status, category=current_category, resolution=current_resolution) }}"
        class="text-xs text-brand hover:text-brand-dark font-semibold flex items-center gap-1">
         <i class="fa-solid fa-xmark text-xs"></i> Clear search
     </a>
@@ -118,9 +139,19 @@
             {% endif %}
         </div>
         <div class="px-5 pb-4 flex items-center justify-between border-t border-gray-100 pt-3">
-            <span class="text-[11px] text-gray-400">
-                <i class="fa-regular fa-clock mr-1"></i>{{ item.date_reported|timesince }} ago
-            </span>
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11px] text-gray-400">
+                    <i class="fa-regular fa-clock mr-1"></i>{{ item.date_reported|timesince }}
+                </span>
+                {% if item.resolution_status != 'OPEN' %}
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full
+                    {% if item.resolution_status == 'SECURED' %}bg-amber-50 text-amber-600 border border-amber-200
+                    {% else %}bg-emerald-50 text-emerald-600 border border-emerald-200{% endif %}">
+                    <i class="fa-solid {% if item.resolution_status == 'SECURED' %}fa-shield-halved{% else %}fa-check-double{% endif %} mr-0.5 text-[9px]"></i>
+                    {{ item.resolution_label }}
+                </span>
+                {% endif %}
+            </div>
             <span class="text-xs font-bold text-brand">View →</span>
         </div>
     </a>
