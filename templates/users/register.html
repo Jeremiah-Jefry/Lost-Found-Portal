@@ -4,125 +4,96 @@
 {% block page_title %}Create Account{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center min-h-[70vh] py-8">
+<div class="flex items-center justify-center min-h-[70vh] py-6">
     <div class="w-full max-w-lg">
-        <!-- Glass Register Card -->
-        <div class="glass-panel rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
             <!-- Header -->
-            <div
-                class="bg-gradient-to-r from-accent/20 to-purple-700/20 border-b border-slate-700/50 px-8 py-8 text-center">
-                <div
-                    class="w-16 h-16 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/20">
-                    <i class="bi bi-person-plus-fill text-3xl text-accent"></i>
+            <div class="px-8 pt-10 pb-6 text-center">
+                <div class="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-5">
+                    <i class="bi bi-person-plus-fill text-2xl text-brand"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-white tracking-wide">Join the Community</h2>
-                <p class="text-sm text-slate-400 mt-2">Create your account to start reporting and finding items.</p>
+                <h2 class="text-2xl font-bold text-gray-900">Join the Community</h2>
+                <p class="text-sm text-gray-400 mt-1">Create your account to start reporting and recovering items.</p>
             </div>
-
-            <!-- Form Body -->
-            <div class="p-8">
+            
+            <div class="px-8 pb-8">
                 <form method="POST">
                     {% csrf_token %}
-
+                    
                     {% if form.errors %}
-                    <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-sm">
-                        <div class="flex items-center mb-2 text-red-300">
-                            <i class="bi bi-exclamation-triangle-fill text-red-500 mr-2"></i>
-                            <span class="font-bold">Please fix the errors below</span>
+                    <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-100 text-sm">
+                        <div class="flex items-center gap-2 text-red-600 font-semibold mb-2">
+                            <i class="bi bi-exclamation-triangle-fill text-red-500"></i> Please fix the errors below
                         </div>
                         {% for field in form %}
-                        {% for error in field.errors %}
-                        <p class="text-red-400 text-xs mt-1 flex items-center"><i class="bi bi-dot mr-1"></i>{{
-                            field.label }}: {{ error }}</p>
-                        {% endfor %}
+                            {% for error in field.errors %}
+                            <p class="text-red-500 text-xs mt-1">• {{ field.label }}: {{ error }}</p>
+                            {% endfor %}
                         {% endfor %}
                         {% for error in form.non_field_errors %}
-                        <p class="text-red-400 text-xs mt-1 flex items-center"><i class="bi bi-dot mr-1"></i>{{ error }}
-                        </p>
+                        <p class="text-red-500 text-xs mt-1">• {{ error }}</p>
                         {% endfor %}
                     </div>
                     {% endif %}
 
-                    <!-- Username -->
-                    <div class="mb-5">
-                        <label for="id_username"
-                            class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Username</label>
+                    <div class="mb-4">
+                        <label for="id_username" class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
                         <div class="relative">
-                            <i
-                                class="bi bi-person absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
-                            <input type="text" name="username" id="id_username"
-                                value="{{ form.username.value|default:'' }}" required autofocus
-                                class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.username.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                            <i class="bi bi-person absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" required autofocus
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border {% if form.username.errors %}border-red-300 ring-2 ring-red-100{% else %}border-gray-200{% endif %} rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
                                 placeholder="Choose a username">
                         </div>
                     </div>
 
-                    <!-- Email -->
-                    <div class="mb-5">
-                        <label for="id_email"
-                            class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Email
-                            Address</label>
+                    <div class="mb-4">
+                        <label for="id_email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                         <div class="relative">
-                            <i
-                                class="bi bi-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                            <i class="bi bi-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}"
-                                class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.email.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
                                 placeholder="your@email.com">
                         </div>
                     </div>
 
-                    <!-- Password Row -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                         <div>
-                            <label for="id_password1"
-                                class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Password</label>
+                            <label for="id_password1" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
                             <div class="relative">
-                                <i
-                                    class="bi bi-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                                <i class="bi bi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <input type="password" name="password1" id="id_password1" required
-                                    class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.password1.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                    class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
                                     placeholder="Min 8 characters">
                             </div>
                         </div>
                         <div>
-                            <label for="id_password2"
-                                class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Confirm</label>
+                            <label for="id_password2" class="block text-sm font-semibold text-gray-700 mb-2">Confirm</label>
                             <div class="relative">
-                                <i
-                                    class="bi bi-lock-fill absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                                <i class="bi bi-lock-fill absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <input type="password" name="password2" id="id_password2" required
-                                    class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.password2.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                    class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
                                     placeholder="Repeat password">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Password Rules Hint -->
-                    <div class="mb-6 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
-                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Password Requirements
-                        </p>
-                        <ul class="text-xs text-slate-400 space-y-1">
-                            <li class="flex items-center"><i class="bi bi-check-circle text-slate-500 mr-2"></i>At least
-                                8 characters</li>
-                            <li class="flex items-center"><i class="bi bi-check-circle text-slate-500 mr-2"></i>Not
-                                entirely numeric</li>
-                            <li class="flex items-center"><i class="bi bi-check-circle text-slate-500 mr-2"></i>Not too
-                                similar to your username</li>
+                    <div class="mb-6 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">Password Requirements</p>
+                        <ul class="text-xs text-gray-400 space-y-1">
+                            <li class="flex items-center"><i class="bi bi-check2 text-gray-300 mr-2"></i>At least 8 characters</li>
+                            <li class="flex items-center"><i class="bi bi-check2 text-gray-300 mr-2"></i>Not entirely numeric</li>
+                            <li class="flex items-center"><i class="bi bi-check2 text-gray-300 mr-2"></i>Not too similar to your username</li>
                         </ul>
                     </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit"
-                        class="w-full py-3.5 bg-accent text-white font-bold rounded-xl hover:bg-blue-600 transition-all duration-300 shadow-lg shadow-accent/30 hover:shadow-accent/50 text-sm tracking-wider uppercase flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full py-3 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-all shadow-md shadow-brand/20 text-sm flex items-center justify-center gap-2">
                         <i class="bi bi-rocket-takeoff"></i> Create Account
                     </button>
                 </form>
             </div>
 
-            <!-- Footer -->
-            <div class="border-t border-slate-700/50 px-8 py-5 text-center bg-slate-800/30">
-                <p class="text-sm text-slate-400">Already have an account? <a href="{% url 'login' %}"
-                        class="text-accent font-bold hover:text-white transition-colors">Sign In</a></p>
+            <div class="border-t border-gray-100 px-8 py-4 text-center bg-gray-50/50">
+                <p class="text-sm text-gray-400">Already have an account? <a href="{% url 'login' %}" class="text-brand font-semibold hover:text-brand-dark transition-colors">Sign In</a></p>
             </div>
         </div>
     </div>

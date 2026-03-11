@@ -1,197 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}KG Portal{% endblock %}</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        slate: {
-                            800: '#1e293b', // Darker Sidebar
-                            900: '#0f172a', // Deep Slate/Navy Background
-                        },
-                        accent: '#3b82f6', // Electric Blue
+                        brand: '#3b82f6',
+                        'brand-dark': '#2563eb',
+                        surface: '#f8fafc',
+                        sidebar: '#f1f5f9',
                     }
                 }
             }
         }
     </script>
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* Glassmorphism Utilities */
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            /* slate-800 with opacity */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        body { font-family: 'Inter', sans-serif; }
+        .glass-nav {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
-
-        /* Custom Scrollbar for dark theme */
-        ::-webkit-scrollbar {
-            width: 8px;
+        /* Smooth slide-down for handover section */
+        .slide-down {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+            opacity: 0;
         }
-
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+        .slide-down.open {
+            max-height: 600px;
+            opacity: 1;
         }
     </style>
 </head>
+<body class="bg-surface text-gray-800 h-screen flex overflow-hidden antialiased">
 
-<body class="bg-slate-900 text-slate-200 font-sans antialiased h-screen flex overflow-hidden">
-
-    <!-- Fixed Sidebar -->
-    <aside class="w-64 bg-slate-800 flex flex-col hidden md:flex border-r border-slate-700/50 relative z-20 shadow-2xl">
-        <!-- Logo Placement -->
-        <div
-            class="h-20 flex items-center px-6 font-bold text-2xl text-white tracking-widest border-b border-slate-700/50 bg-slate-800">
-            <div class="w-8 h-8 rounded bg-accent flex items-center justify-center mr-3 shadow-lg shadow-accent/40">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex shadow-sm">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center mr-3 shadow-md shadow-brand/30">
                 <i class="bi bi-shield-check text-white text-lg"></i>
             </div>
-            KG <span class="text-accent ml-1 font-light">PORTAL</span>
+            <span class="font-extrabold text-xl text-gray-900 tracking-tight">KG <span class="text-brand">Portal</span></span>
         </div>
-
-        <nav class="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-            <div class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-3 font-bold pl-2">Menu</div>
-
-            <a href="/"
-                class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'index' %}bg-accent/10 border-l-4 border-accent text-white{% else %}text-slate-400 hover:bg-slate-700/50 hover:text-white border-l-4 border-transparent{% endif %}">
-                <i
-                    class="bi bi-grid-1x2-fill mr-4 text-lg {% if request.resolver_match.url_name == 'index' %}text-accent{% endif %}"></i>
-                Dashboard
+        
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <p class="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-bold mb-3 pl-3">Navigation</p>
+            
+            <a href="/" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {% if request.resolver_match.url_name == 'index' %}bg-brand/10 text-brand{% else %}text-gray-500 hover:bg-gray-100 hover:text-gray-800{% endif %}">
+                <i class="bi bi-grid-1x2-fill mr-3 text-base"></i> Dashboard
             </a>
-
-            <a href="/items/"
-                class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {% if request.resolver_match.url_name == 'item_feed' %}bg-accent/10 border-l-4 border-accent text-white{% else %}text-slate-400 hover:bg-slate-700/50 hover:text-white border-l-4 border-transparent{% endif %}">
-                <i
-                    class="bi bi-collection-fill mr-4 text-lg {% if request.resolver_match.url_name == 'item_feed' %}text-accent{% endif %}"></i>
-                Item Feed
+            <a href="/items/" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {% if request.resolver_match.url_name == 'item_feed' %}bg-brand/10 text-brand{% else %}text-gray-500 hover:bg-gray-100 hover:text-gray-800{% endif %}">
+                <i class="bi bi-collection-fill mr-3 text-base"></i> Item Feed
             </a>
-
+            
             {% if user.is_authenticated %}
-            <div class="text-xs uppercase tracking-[0.2em] text-slate-500 mt-8 mb-3 font-bold pl-2">Actions</div>
-            <a href="/items/report/"
-                class="flex items-center px-4 py-3 bg-accent/20 text-accent border border-accent/30 rounded-lg hover:bg-accent hover:text-white transition-all duration-300 shadow-lg shadow-accent/10 mt-2 group">
-                <i class="bi bi-plus-lg mr-3 text-lg group-hover:rotate-90 transition-transform duration-300"></i>
-                Report Item
+            <p class="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-bold mt-8 mb-3 pl-3">Actions</p>
+            <a href="/items/report/" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold bg-brand text-white hover:bg-brand-dark transition-all shadow-md shadow-brand/25 group">
+                <i class="bi bi-plus-lg mr-2 text-base group-hover:rotate-90 transition-transform duration-300"></i> Report Item
             </a>
             {% endif %}
         </nav>
-
-        <!-- User Profile Area -->
-        <div class="p-5 border-t border-slate-700/50 bg-slate-800/80 backdrop-blur-md">
+        
+        <!-- Profile Footer -->
+        <div class="p-4 border-t border-gray-100">
             {% if user.is_authenticated %}
-            <div class="flex items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
-                <div
-                    class="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-blue-700 shadow-lg shadow-accent/30 text-white flex items-center justify-center font-bold text-lg">
+            <div class="flex items-center bg-gray-50 p-3 rounded-xl">
+                <div class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm shadow-sm">
                     {{ user.username|make_list|first|upper }}
                 </div>
                 <div class="ml-3 flex-1 overflow-hidden">
-                    <p class="text-sm font-bold text-white truncate">{{ user.username }}</p>
-                    <p class="text-xs text-slate-400 truncate">{{ user.designation|default:'Member' }}</p>
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ user.username }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ user.designation|default:'Community Member' }}</p>
                 </div>
                 <form method="POST" action="/users/logout/" class="ml-2">
                     {% csrf_token %}
-                    <button type="submit"
-                        class="w-8 h-8 rounded-full bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 flex items-center justify-center transition-colors"
-                        title="Logout">
-                        <i class="bi bi-power"></i>
+                    <button type="submit" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors" title="Logout">
+                        <i class="bi bi-power text-sm"></i>
                     </button>
                 </form>
             </div>
             {% else %}
-            <div class="space-y-3">
-                <a href="/users/login/"
-                    class="block w-full text-center px-4 py-2.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-lg shadow-accent/30">Sign
-                    In</a>
-                <a href="/users/register/"
-                    class="block w-full text-center px-4 py-2.5 border border-slate-600 text-slate-300 rounded-lg text-sm font-medium hover:text-white hover:bg-slate-700 transition-colors">Create
-                    Account</a>
+            <div class="space-y-2">
+                <a href="/users/login/" class="block w-full text-center px-4 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors shadow-md shadow-brand/20">Sign In</a>
+                <a href="/users/register/" class="block w-full text-center px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">Create Account</a>
             </div>
             {% endif %}
         </div>
     </aside>
 
     <!-- Main Content Wrapper -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
-
-        <!-- Ambient Background Glow -->
-        <div class="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div
-            class="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none">
-        </div>
-
-        <!-- Top Navigation Bar -->
-        <header
-            class="h-20 glass-panel border-b-0 border-slate-700/50 flex items-center justify-between px-8 z-10 shrink-0 sticky top-0">
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Top Nav Bar -->
+        <header class="h-16 glass-nav border-b border-gray-200/80 flex items-center justify-between px-6 lg:px-8 z-10 shrink-0 sticky top-0 shadow-sm">
             <div class="flex items-center">
-                <button class="md:hidden text-slate-400 hover:text-white focus:outline-none mr-4">
-                    <i class="bi bi-list text-3xl"></i>
+                <button class="md:hidden text-gray-500 hover:text-gray-800 focus:outline-none mr-4" id="mobile-menu-btn">
+                    <i class="bi bi-list text-2xl"></i>
                 </button>
-                <div class="flex flex-col">
-                    <h1 class="text-2xl font-bold text-white tracking-wide">{% block page_title %}Overview{% endblock %}
-                    </h1>
-                    <span class="text-xs text-slate-400 font-medium tracking-wider uppercase">KG Community Recovery
-                        Base</span>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-900">{% block page_title %}Overview{% endblock %}</h1>
+                    <p class="text-xs text-gray-400 font-medium tracking-wide uppercase hidden sm:block">KG Community Recovery Portal</p>
                 </div>
             </div>
-
-            <div class="flex items-center gap-4">
-                <form method="GET" action="/items/" class="relative hidden sm:block group">
-                    <i
-                        class="bi bi-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-accent transition-colors"></i>
-                    <input type="text" name="q" placeholder="Search records..."
-                        class="pl-12 pr-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-full text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent w-64 focus:w-80 transition-all duration-300 placeholder-slate-500 backdrop-blur-sm">
-                </form>
-            </div>
+            
+            <form method="GET" action="/items/" class="relative hidden sm:block">
+                <i class="bi bi-search absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" name="q" placeholder="Search items..." class="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand w-52 lg:w-72 transition-all placeholder-gray-400">
+            </form>
         </header>
 
-        <!-- Dynamic Content Area -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8 lg:p-10 relative z-10">
-
+        <!-- Scrollable Content Area -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-surface p-5 md:p-8 lg:p-10">
+            
             <!-- Flash Messages -->
             {% if messages %}
-            <div class="mb-8 max-w-7xl mx-auto space-y-3">
+            <div class="mb-6 max-w-6xl mx-auto space-y-3">
                 {% for message in messages %}
-                <div class="glass-panel px-6 py-4 rounded-xl text-sm relative border-l-4 {% if message.tags == 'error' %}border-l-red-500 text-red-100{% else %}border-l-accent text-blue-100{% endif %} shadow-lg flex items-center justify-between transform transition-all animate-fade-in-down"
-                    role="alert">
-                    <div class="flex items-center">
-                        <div
-                            class="w-8 h-8 rounded-full flex items-center justify-center mr-4 {% if message.tags == 'error' %}bg-red-500/20 text-red-400{% else %}bg-accent/20 text-accent{% endif %}">
-                            <i
-                                class="bi {% if message.tags == 'error' %}bi-exclamation-triangle-fill{% else %}bi-check-circle-fill{% endif %} text-lg"></i>
-                        </div>
-                        <span class="font-medium tracking-wide">{{ message }}</span>
-                    </div>
+                <div class="px-5 py-4 rounded-xl text-sm shadow-sm border flex items-center gap-3 {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %}" role="alert">
+                    <i class="bi {% if message.tags == 'error' %}bi-exclamation-circle-fill text-red-500{% elif message.tags == 'success' %}bi-check-circle-fill text-green-500{% else %}bi-info-circle-fill text-blue-500{% endif %} text-lg"></i>
+                    <span class="font-medium">{{ message }}</span>
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
-
-            <div class="max-w-7xl mx-auto">
-                {% block content %}
-                <!-- Child templates will inject content here -->
-                {% endblock %}
+            
+            <div class="max-w-6xl mx-auto">
+                {% block content %}{% endblock %}
             </div>
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
