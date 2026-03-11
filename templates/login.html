@@ -1,61 +1,45 @@
 {% extends "base.html" %}
-
-{% block title %}Login - KG Portal{% endblock %}
+{% block title %}Sign In - KG Portal{% endblock %}
 {% block page_title %}Sign In{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center min-h-[70vh]">
+<div class="flex items-center justify-center min-h-[65vh]">
     <div class="w-full max-w-md">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
-            <!-- Header -->
-            <div class="px-8 pt-10 pb-6 text-center">
-                <div class="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-5">
+            <div class="px-6 md:px-8 pt-8 md:pt-10 pb-5 text-center">
+                <div class="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-4">
                     <i class="bi bi-shield-lock-fill text-2xl text-brand"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900">Welcome Back</h2>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900">Welcome Back</h2>
                 <p class="text-sm text-gray-400 mt-1">Sign in to manage your lost and found items.</p>
             </div>
-            
-            <!-- Form -->
-            <div class="px-8 pb-8">
+            <div class="px-6 md:px-8 pb-6 md:pb-8">
                 <form method="POST">
-                    {% csrf_token %}
-                    
-                    {% if form.errors %}
-                    <div class="mb-5 p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 flex items-start gap-3">
-                        <i class="bi bi-exclamation-circle-fill text-red-500 mt-0.5"></i>
-                        <span>Invalid username or password. Please try again.</span>
-                    </div>
-                    {% endif %}
-
                     <div class="mb-4">
-                        <label for="id_username" class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+                        <label for="username" class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
                         <div class="relative">
                             <i class="bi bi-person absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" name="username" id="id_username" required autofocus
+                            <input type="text" name="username" id="username" required autofocus
                                 class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
                                 placeholder="Enter your username">
                         </div>
                     </div>
-
-                    <div class="mb-6">
-                        <label for="id_password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                    <div class="mb-5">
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
                         <div class="relative">
                             <i class="bi bi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input type="password" name="password" id="id_password" required
+                            <input type="password" name="password" id="password" required
                                 class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm"
                                 placeholder="Enter your password">
                         </div>
                     </div>
-
                     <button type="submit" class="w-full py-3 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-all shadow-md shadow-brand/20 text-sm flex items-center justify-center gap-2">
                         <i class="bi bi-box-arrow-in-right"></i> Sign In
                     </button>
                 </form>
             </div>
-
-            <div class="border-t border-gray-100 px-8 py-4 text-center bg-gray-50/50">
-                <p class="text-sm text-gray-400">Don't have an account? <a href="{% url 'register' %}" class="text-brand font-semibold hover:text-brand-dark transition-colors">Sign Up</a></p>
+            <div class="border-t border-gray-100 px-6 md:px-8 py-4 text-center bg-gray-50/50">
+                <p class="text-sm text-gray-400">Don't have an account? <a href="{{ url_for('register') }}" class="text-brand font-semibold hover:text-brand-dark transition-colors">Sign Up</a></p>
             </div>
         </div>
     </div>

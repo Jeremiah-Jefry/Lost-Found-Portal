@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ item.title }} - KG Portal{% endblock %}
+{% block page_title %}Edit Report{% endblock %}
+
+{% block content %}
+<div class="flex items-start justify-center py-2">
+    <div class="w-full max-w-2xl">
+        <nav class="mb-6">
+            <ol class="flex items-center text-sm text-gray-400 space-x-2">
+                <li><a href="{{ url_for('feed') }}" class="hover:text-brand transition-colors">Feed</a></li>
+                <li><i class="bi bi-chevron-right text-gray-300 text-xs"></i></li>
+                <li><a href="{{ url_for('item_detail', item_id=item.id) }}" class="hover:text-brand transition-colors">{{ item.title[:20] }}</a></li>
+                <li><i class="bi bi-chevron-right text-gray-300 text-xs"></i></li>
+                <li class="text-gray-700 font-medium">Edit</li>
+            </ol>
+        </nav>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
+            <div class="px-8 py-6 text-center border-b border-gray-100">
+                <h2 class="text-xl font-bold text-gray-900">Edit Item Report</h2>
+            </div>
+            <div class="p-8">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="title" class="block text-sm font-semibold text-gray-700 mb-1.5">Title</label>
+                        <input type="text" name="title" id="title" value="{{ item.title }}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="status" class="block text-sm font-semibold text-gray-700 mb-1.5">Type</label>
+                            <select name="status" id="status" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm cursor-pointer">
+                                <option value="LOST" {% if item.status == 'LOST' %}selected{% endif %}>🔴 Lost</option>
+                                <option value="FOUND" {% if item.status == 'FOUND' %}selected{% endif %}>🟢 Found</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="category" class="block text-sm font-semibold text-gray-700 mb-1.5">Category</label>
+                            <select name="category" id="category" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm cursor-pointer">
+                                <option value="ELECTRONICS" {% if item.category == 'ELECTRONICS' %}selected{% endif %}>Electronics</option>
+                                <option value="DOCUMENTS" {% if item.category == 'DOCUMENTS' %}selected{% endif %}>IDs & Documents</option>
+                                <option value="KEYS" {% if item.category == 'KEYS' %}selected{% endif %}>Keys & Access Cards</option>
+                                <option value="CLOTHING" {% if item.category == 'CLOTHING' %}selected{% endif %}>Clothing & Bags</option>
+                                <option value="OTHER" {% if item.category == 'OTHER' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="description" class="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
+                        <textarea name="description" id="description" rows="4" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm resize-none">{{ item.description }}</textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="location" class="block text-sm font-semibold text-gray-700 mb-1.5">Location</label>
+                        <input type="text" name="location" id="location" value="{{ item.location }}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all text-sm">
+                    </div>
+                    <div class="mb-5">
+                        <label for="image" class="block text-sm font-semibold text-gray-700 mb-1.5">New Photo (Optional)</label>
+                        {% if item.image_filename %}<p class="text-xs text-gray-400 mb-1.5">Current: {{ item.image_filename }}</p>{% endif %}
+                        <input type="file" name="image" id="image" accept="image/*" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 border-dashed rounded-xl text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand/10 file:text-brand cursor-pointer text-sm">
+                    </div>
+                    <div class="flex gap-4 mt-8">
+                        <a href="{{ url_for('item_detail', item_id=item.id) }}" class="flex-1 py-3 text-center bg-gray-50 text-gray-600 font-semibold rounded-xl hover:bg-gray-100 transition-all border border-gray-200 text-sm">Cancel</a>
+                        <button type="submit" class="flex-1 py-3 bg-brand text-white font-semibold rounded-xl hover:bg-brand-dark transition-all shadow-md shadow-brand/20 text-sm flex items-center justify-center gap-2"><i class="bi bi-check-lg"></i> Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

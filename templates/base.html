@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}KG Portal{% endblock %}</title>
+    <meta name="description" content="KG Community Recovery Portal — Report and recover lost items on campus.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,135 +13,143 @@
                     colors: {
                         brand: '#3b82f6',
                         'brand-dark': '#2563eb',
+                        'brand-light': '#dbeafe',
                         surface: '#f8fafc',
-                        sidebar: '#f1f5f9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass-nav {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+        .slide-section {
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
         }
-        /* Smooth slide-down for handover section */
-        .slide-down {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
-            opacity: 0;
-        }
-        .slide-down.open {
-            max-height: 600px;
-            opacity: 1;
-        }
+        .slide-section.open { max-height: 800px; opacity: 1; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
-<body class="bg-surface text-gray-800 h-screen flex overflow-hidden antialiased">
+<body class="bg-surface font-sans text-gray-800 h-screen flex overflow-hidden antialiased">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex shadow-sm">
-        <!-- Logo -->
-        <div class="h-16 flex items-center px-6 border-b border-gray-100">
-            <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center mr-3 shadow-md shadow-brand/30">
+    <!-- SIDEBAR (Desktop) -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex-col hidden md:flex shrink-0 shadow-sm">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100 shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center mr-3 shadow-md shadow-brand/30">
                 <i class="bi bi-shield-check text-white text-lg"></i>
             </div>
             <span class="font-extrabold text-xl text-gray-900 tracking-tight">KG <span class="text-brand">Portal</span></span>
         </div>
-        
-        <!-- Navigation -->
         <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             <p class="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-bold mb-3 pl-3">Navigation</p>
-            
-            <a href="/" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {% if request.resolver_match.url_name == 'index' %}bg-brand/10 text-brand{% else %}text-gray-500 hover:bg-gray-100 hover:text-gray-800{% endif %}">
+            <a href="{{ url_for('dashboard') }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {% if request.endpoint == 'dashboard' %}bg-brand-light text-brand{% else %}text-gray-500 hover:bg-gray-50 hover:text-gray-800{% endif %}">
                 <i class="bi bi-grid-1x2-fill mr-3 text-base"></i> Dashboard
             </a>
-            <a href="/items/" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {% if request.resolver_match.url_name == 'item_feed' %}bg-brand/10 text-brand{% else %}text-gray-500 hover:bg-gray-100 hover:text-gray-800{% endif %}">
+            <a href="{{ url_for('feed') }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {% if request.endpoint == 'feed' %}bg-brand-light text-brand{% else %}text-gray-500 hover:bg-gray-50 hover:text-gray-800{% endif %}">
                 <i class="bi bi-collection-fill mr-3 text-base"></i> Item Feed
             </a>
-            
-            {% if user.is_authenticated %}
+            {% if current_user.is_authenticated %}
             <p class="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-bold mt-8 mb-3 pl-3">Actions</p>
-            <a href="/items/report/" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold bg-brand text-white hover:bg-brand-dark transition-all shadow-md shadow-brand/25 group">
+            <a href="{{ url_for('report') }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold bg-brand text-white hover:bg-brand-dark transition-all shadow-md shadow-brand/25 group">
                 <i class="bi bi-plus-lg mr-2 text-base group-hover:rotate-90 transition-transform duration-300"></i> Report Item
             </a>
             {% endif %}
         </nav>
-        
-        <!-- Profile Footer -->
-        <div class="p-4 border-t border-gray-100">
-            {% if user.is_authenticated %}
+        <div class="p-4 border-t border-gray-100 shrink-0">
+            {% if current_user.is_authenticated %}
             <div class="flex items-center bg-gray-50 p-3 rounded-xl">
-                <div class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                    {{ user.username|make_list|first|upper }}
+                <div class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                    {{ current_user.username[0]|upper }}
                 </div>
-                <div class="ml-3 flex-1 overflow-hidden">
-                    <p class="text-sm font-semibold text-gray-800 truncate">{{ user.username }}</p>
-                    <p class="text-xs text-gray-400 truncate">{{ user.designation|default:'Community Member' }}</p>
+                <div class="ml-3 flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ current_user.username }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
                 </div>
-                <form method="POST" action="/users/logout/" class="ml-2">
-                    {% csrf_token %}
-                    <button type="submit" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-400 flex items-center justify-center transition-colors" title="Logout">
-                        <i class="bi bi-power text-sm"></i>
-                    </button>
-                </form>
+                <a href="{{ url_for('logout') }}" class="ml-2 w-8 h-8 rounded-lg bg-white border border-gray-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 text-gray-400 flex items-center justify-center transition-colors shrink-0" title="Logout">
+                    <i class="bi bi-power text-sm"></i>
+                </a>
             </div>
             {% else %}
             <div class="space-y-2">
-                <a href="/users/login/" class="block w-full text-center px-4 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors shadow-md shadow-brand/20">Sign In</a>
-                <a href="/users/register/" class="block w-full text-center px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">Create Account</a>
+                <a href="{{ url_for('login') }}" class="block w-full text-center px-4 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors shadow-md shadow-brand/20">Sign In</a>
+                <a href="{{ url_for('register') }}" class="block w-full text-center px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">Create Account</a>
             </div>
             {% endif %}
         </div>
     </aside>
 
-    <!-- Main Content Wrapper -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        
-        <!-- Top Nav Bar -->
-        <header class="h-16 glass-nav border-b border-gray-200/80 flex items-center justify-between px-6 lg:px-8 z-10 shrink-0 sticky top-0 shadow-sm">
+    <!-- MOBILE SIDEBAR -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="closeMobile()"></div>
+    <aside id="mobile-sidebar" class="fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 shadow-2xl flex flex-col -translate-x-full transition-transform duration-300 md:hidden">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-gray-100">
             <div class="flex items-center">
-                <button class="md:hidden text-gray-500 hover:text-gray-800 focus:outline-none mr-4" id="mobile-menu-btn">
-                    <i class="bi bi-list text-2xl"></i>
+                <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center mr-2"><i class="bi bi-shield-check text-white text-sm"></i></div>
+                <span class="font-extrabold text-lg text-gray-900">KG <span class="text-brand">Portal</span></span>
+            </div>
+            <button onclick="closeMobile()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1">
+            <a href="{{ url_for('dashboard') }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50"><i class="bi bi-grid-1x2-fill mr-3"></i>Dashboard</a>
+            <a href="{{ url_for('feed') }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50"><i class="bi bi-collection-fill mr-3"></i>Item Feed</a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('report') }}" class="flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold bg-brand text-white mt-4 shadow-md"><i class="bi bi-plus-lg mr-2"></i>Report Item</a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="h-16 bg-white/90 backdrop-blur-lg border-b border-gray-200/80 flex items-center justify-between px-5 lg:px-8 z-10 shrink-0 shadow-sm">
+            <div class="flex items-center">
+                <button class="md:hidden w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-500 mr-3" onclick="openMobile()">
+                    <i class="bi bi-list text-xl"></i>
                 </button>
                 <div>
-                    <h1 class="text-lg font-bold text-gray-900">{% block page_title %}Overview{% endblock %}</h1>
-                    <p class="text-xs text-gray-400 font-medium tracking-wide uppercase hidden sm:block">KG Community Recovery Portal</p>
+                    <h1 class="text-lg font-bold text-gray-900 leading-tight">{% block page_title %}Overview{% endblock %}</h1>
+                    <p class="text-[11px] text-gray-400 font-medium tracking-wide uppercase hidden sm:block">KG Community Recovery Portal</p>
                 </div>
             </div>
-            
-            <form method="GET" action="/items/" class="relative hidden sm:block">
-                <i class="bi bi-search absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input type="text" name="q" placeholder="Search items..." class="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand w-52 lg:w-72 transition-all placeholder-gray-400">
+            <form method="GET" action="{{ url_for('feed') }}" class="relative hidden sm:block">
+                <i class="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" name="q" placeholder="Search items..." class="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand w-48 lg:w-64 transition-all placeholder-gray-400">
             </form>
         </header>
 
-        <!-- Scrollable Content Area -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-surface p-5 md:p-8 lg:p-10">
-            
-            <!-- Flash Messages -->
+        <main class="flex-1 overflow-y-auto bg-surface p-5 md:p-8">
+            {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="mb-6 max-w-6xl mx-auto space-y-3">
-                {% for message in messages %}
-                <div class="px-5 py-4 rounded-xl text-sm shadow-sm border flex items-center gap-3 {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %}" role="alert">
-                    <i class="bi {% if message.tags == 'error' %}bi-exclamation-circle-fill text-red-500{% elif message.tags == 'success' %}bi-check-circle-fill text-green-500{% else %}bi-info-circle-fill text-blue-500{% endif %} text-lg"></i>
+                {% for category, message in messages %}
+                <div class="px-5 py-3.5 rounded-xl text-sm shadow-sm border flex items-center gap-3 {% if category == 'error' %}bg-red-50 border-red-200 text-red-700{% elif category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %}" role="alert">
+                    <i class="bi {% if category == 'error' %}bi-exclamation-circle-fill text-red-500{% elif category == 'success' %}bi-check-circle-fill text-emerald-500{% else %}bi-info-circle-fill text-blue-500{% endif %} text-lg shrink-0"></i>
                     <span class="font-medium">{{ message }}</span>
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
-            
+            {% endwith %}
             <div class="max-w-6xl mx-auto">
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openMobile() {
+            document.getElementById('mobile-overlay').classList.remove('hidden');
+            document.getElementById('mobile-sidebar').classList.remove('-translate-x-full');
+        }
+        function closeMobile() {
+            document.getElementById('mobile-overlay').classList.add('hidden');
+            document.getElementById('mobile-sidebar').classList.add('-translate-x-full');
+        }
+    </script>
 </body>
 </html>
