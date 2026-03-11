@@ -1,86 +1,145 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard - KG Portal{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-12 text-center mt-5">
-        <h1 class="display-4 fw-bold">Welcome to the KG Recovery Portal</h1>
-        <p class="lead text-muted">A central hub for finding lost items and returning them to their rightful owners on
-            the KG College Campus.</p>
-        <hr class="my-4">
-        <div class="d-flex justify-content-center gap-3 mt-4">
-            <a href="#" class="btn btn-primary btn-lg px-5 shadow-sm">Report a Lost Item</a>
-            <a href="#" class="btn btn-outline-secondary btn-lg px-5 shadow-sm">Search Found Items</a>
+<!-- Overview Metrics Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <!-- Active Members Card -->
+    <div
+        class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-accent/50 transition-colors duration-300">
+        <div
+            class="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all">
         </div>
+        <p class="text-slate-400 text-sm font-bold tracking-widest uppercase mb-1">Active Staff</p>
+        <h3 class="text-4xl font-extrabold text-blue-400">12</h3>
+        <p class="text-xs text-slate-500 mt-2">Currently logged in</p>
+    </div>
+
+    <!-- Total Lost Card -->
+    <div
+        class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-red-500/50 transition-colors duration-300">
+        <div
+            class="absolute -right-6 -top-6 w-24 h-24 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all">
+        </div>
+        <p class="text-slate-400 text-sm font-bold tracking-widest uppercase mb-1">Items Lost</p>
+        <h3 class="text-4xl font-extrabold text-red-500">{{ total_lost|default:"0" }}</h3>
+        <p class="text-xs text-slate-500 mt-2">Active reports pending</p>
+    </div>
+
+    <!-- Total Found Card -->
+    <div
+        class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-green-500/50 transition-colors duration-300">
+        <div
+            class="absolute -right-6 -top-6 w-24 h-24 bg-green-500/10 rounded-full blur-xl group-hover:bg-green-500/20 transition-all">
+        </div>
+        <p class="text-slate-400 text-sm font-bold tracking-widest uppercase mb-1">Items Found</p>
+        <h3 class="text-4xl font-extrabold text-green-500">{{ total_found|default:"0" }}</h3>
+        <p class="text-xs text-slate-500 mt-2">Secured locally or handed over</p>
+    </div>
+
+    <!-- Resolution Rate -->
+    <div
+        class="glass-panel rounded-2xl p-6 relative overflow-hidden group hover:border-accent/50 transition-colors duration-300">
+        <div
+            class="absolute -right-6 -top-6 w-24 h-24 bg-accent/10 rounded-full blur-xl group-hover:bg-accent/20 transition-all">
+        </div>
+        <p class="text-slate-400 text-sm font-bold tracking-widest uppercase mb-1">Resolution Rate</p>
+        <h3 class="text-4xl font-extrabold text-white">84<span class="text-xl text-slate-500">%</span></h3>
+        <p class="text-xs text-slate-500 mt-2">Of total reports resolved</p>
     </div>
 </div>
 
-<div class="row mt-5 pt-5 text-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0 h-100 bg-light">
-            <div class="card-body py-5">
-                <h3 class="fw-bold text-danger mb-3">{{ total_lost }}</h3>
-                <p class="text-muted mb-0">Items Reported Lost</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body py-5">
-                <h3 class="fw-bold text-success mb-3">0</h3>
-                <p class="text-muted mb-0">Items Successfully Found</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0 h-100 bg-light">
-            <div class="card-body py-5">
-                <h3 class="fw-bold text-success mb-3">{{ total_found }}</h3>
-                <p class="text-muted mb-0">Items Successfully Found</p>
-            </div>
-        </div>
+<!-- Personal Feed Section -->
+{% if user.is_authenticated and my_items %}
+<div class="mb-8 flex items-center justify-between border-b border-slate-700/50 pb-4">
+    <div>
+        <h2 class="text-xl font-bold text-white tracking-wide">My Active Reports</h2>
+        <p class="text-sm text-slate-400">Items you are currently tracking.</p>
     </div>
 </div>
 
-{% if user.is_authenticated and my_items is not None %}
-<div class="row mt-5 pt-4 border-top">
-    <div class="col-12 mb-4">
-        <h3 class="fw-bold">My Reported Items</h3>
-        <p class="text-muted">Manage the items you've submitted to the recovery portal.</p>
-    </div>
-</div>
-<div class="row row-cols-1 row-cols-md-3 g-4">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {% for item in my_items %}
-    <div class="col">
-        <div class="card h-100 shadow-sm border-0">
+    <div
+        class="glass-panel rounded-2xl overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-accent/5 transition-all duration-300 transform hover:-translate-y-1">
+
+        <!-- Image Header -->
+        <div class="h-48 relative overflow-hidden">
             {% if item.image %}
-            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}"
-                style="height: 150px; object-fit: cover;">
+            <img src="{{ item.image.url }}" alt="{{ item.title }}"
+                class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 group-hover:scale-105">
             {% else %}
-            <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
-                style="height: 150px;">
-                <i class="bi bi-image" style="font-size: 2rem;"></i>
+            <div class="w-full h-full bg-slate-800/80 flex items-center justify-center border-b border-slate-700/50">
+                <i class="bi bi-box-seam text-4xl text-slate-600"></i>
             </div>
             {% endif %}
-            <div class="card-body py-3">
-                <span
-                    class="badge {% if item.status == 'LOST' %}bg-danger{% else %}bg-success{% endif %} mb-2 px-2 py-1 rounded-pill"
-                    style="font-size: 0.7rem;">
-                    {{ item.get_status_display }}
+
+            <!-- Absolute Positioning Badge -->
+            <div class="absolute top-4 right-4">
+                <span class="px-3 py-1 text-xs font-bold rounded-full shadow-lg backdrop-blur-md 
+                    {% if item.status == 'LOST' %}bg-red-500/90 text-white border border-red-400
+                    {% elif item.status == 'FOUND' %}bg-green-500/90 text-white border border-green-400
+                    {% else %}bg-slate-600/90 text-white border border-slate-500{% endif %}">
+                    {{ item.get_status_display|upper }}
                 </span>
-                <h6 class="card-title fw-bold text-truncate mb-1">{{ item.title }}</h6>
-                <small class="text-muted"><i class="bi bi-clock-history"></i> {{ item.date_reported|date:"M d, Y"
-                    }}</small>
             </div>
-            <div class="card-footer bg-transparent pt-0 text-center">
-                <a href="{% url 'item_detail' item.pk %}" class="btn btn-sm btn-outline-secondary w-100">Manage</a>
+
+            <!-- Category Overlay Bottom -->
+            <div
+                class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-4">
+                <p class="text-xs font-bold text-accent uppercase tracking-wider mb-1">{{ item.get_category_display }}
+                </p>
+                <h3 class="text-lg font-bold text-white truncate drop-shadow-md">{{ item.title }}</h3>
+            </div>
+        </div>
+
+        <!-- Card Body -->
+        <div class="p-5 flex-1 flex flex-col bg-slate-800/20 backdrop-blur-sm">
+            <div class="text-sm text-slate-400 mb-4 flex-1">
+                <div class="flex items-start mb-2">
+                    <i class="bi bi-geo-alt-fill text-slate-500 mr-2 mt-0.5"></i>
+                    <span class="truncate">{{ item.location_description|truncatechars:35 }}</span>
+                </div>
+
+                {% if item.handover_status %}
+                <div class="mt-4 p-3 rounded-lg bg-slate-800 border border-slate-700">
+                    <p class="text-xs font-bold text-white uppercase tracking-wider mb-1 flex items-center"><i
+                            class="bi bi-shield-lock text-accent mr-2"></i>Status</p>
+                    <p class="text-sm text-slate-300">{{ item.get_handover_status_display }}</p>
+                    {% if item.receiver_name %}
+                    <p class="text-xs text-slate-500 mt-1">Ref: {{ item.receiver_name }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-auto d-flex flex-col">
+                <div class="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                    <span class="text-xs text-slate-500 font-medium"><i class="bi bi-clock mr-1"></i>{{
+                        item.date_reported|date:"M d, Y" }}</span>
+                    <a href="/items/{{ item.pk }}/"
+                        class="text-sm font-bold text-accent hover:text-white transition-colors bg-accent/10 hover:bg-accent px-4 py-1.5 rounded-full border border-accent/20 hover:border-accent">Manage</a>
+                </div>
             </div>
         </div>
     </div>
-    {% empty %}
-    <div class="col-12 py-4 text-center border rounded bg-light">
-        <p class="text-muted mb-0">You haven't reported any items yet.</p>
-    </div>
     {% endfor %}
+</div>
+
+{% elif not user.is_authenticated %}
+<div class="glass-panel rounded-2xl p-12 text-center border-dashed border-2 border-slate-700/50">
+    <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner py-5">
+        <i class="bi bi-lock-fill text-4xl text-slate-500"></i>
+    </div>
+    <h3 class="text-2xl font-bold text-white mb-2">Access Restricted</h3>
+    <p class="text-slate-400 max-w-md mx-auto mb-8">Sign in or create an account to view and manage your strictly
+        authorized item reports on the portal.</p>
+    <a href="/users/login/"
+        class="inline-flex items-center px-6 py-3 bg-accent text-white font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-accent/20">
+        <i class="bi bi-shield-check mr-2"></i> Authenticate
+    </a>
 </div>
 {% endif %}
 
