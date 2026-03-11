@@ -44,8 +44,8 @@
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700
                                focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-brand
                                transition-all text-sm cursor-pointer appearance-none">
-                        <option value="LOST" selected>🔴  Lost Item</option>
-                        <option value="FOUND">🟢  Found Item</option>
+                        <option value="LOST" selected>  Lost Item</option>
+                        <option value="FOUND"> Found Item</option>
                     </select>
                     <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2
                               text-gray-400 text-xs pointer-events-none"></i>
@@ -264,38 +264,15 @@
 </div>
 
 <!-- ── Page-scoped JavaScript ───────────────────────────────────────────────── -->
+<!-- Handover section toggle is handled globally by static/js/main.js          -->
 <script>
 (function () {
     'use strict';
 
     /* ── DOM refs ─────────────────────────────────────────────────── */
-    const statusEl    = document.getElementById('status');
-    const hdSection   = document.getElementById('handover-section');
-    const hdSelect    = document.getElementById('handover_status');
-    const secFields   = document.getElementById('security-fields');
-    const dropZone    = document.getElementById('drop-zone');
-    const fileInput   = document.getElementById('image');
-    const MAX_BYTES   = 2 * 1024 * 1024;   // 2 MB — mirrors server limit
-
-    /* ── Handover section (visible only for FOUND items) ─────────── */
-    function toggleHandover() {
-        const isFound = statusEl.value === 'FOUND';
-        hdSection.classList.toggle('open', isFound);
-        if (!isFound) {
-            hdSelect.value = '';
-            secFields.classList.remove('open');
-        }
-    }
-
-    /* ── Security officer fields (visible only when SECURITY) ────── */
-    function toggleSecurity() {
-        secFields.classList.toggle('open', hdSelect.value === 'SECURITY');
-    }
-
-    statusEl.addEventListener('change', toggleHandover);
-    hdSelect.addEventListener('change', toggleSecurity);
-    toggleHandover();   // reflect any pre-selected value on page load
-    toggleSecurity();
+    const dropZone  = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('image');
+    const MAX_BYTES = 2 * 1024 * 1024;   // 2 MB — mirrors server limit
 
     /* ── File upload helpers ──────────────────────────────────────── */
     const states = {
@@ -312,8 +289,8 @@
     }
 
     function formatBytes(bytes) {
-        if (bytes < 1024)        return bytes + ' B';
-        if (bytes < 1048576)     return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024)    return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / 1048576).toFixed(2) + ' MB';
     }
 
@@ -369,7 +346,6 @@
         dropZone.classList.remove('border-brand', 'bg-blue-50/30');
         const file = event.dataTransfer.files[0];
         if (file) {
-            /* Assign to the hidden input so the form submits it */
             const dt  = new DataTransfer();
             dt.items.add(file);
             fileInput.files = dt.files;
@@ -377,12 +353,12 @@
         }
     }
 
-    /* Expose to inline handlers */
-    window.handleFileSelect  = handleFileSelect;
-    window.clearUpload       = clearUpload;
-    window.handleDragOver    = handleDragOver;
-    window.handleDragLeave   = handleDragLeave;
-    window.handleDrop        = handleDrop;
+    /* Expose to inline handlers on the drop-zone div */
+    window.handleFileSelect = handleFileSelect;
+    window.clearUpload      = clearUpload;
+    window.handleDragOver   = handleDragOver;
+    window.handleDragLeave  = handleDragLeave;
+    window.handleDrop       = handleDrop;
 
 }());
 </script>

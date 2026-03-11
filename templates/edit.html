@@ -115,9 +115,10 @@
                     </div>
 
                     <!-- Handover / Custody (FOUND items only) -->
+                    <!-- Visibility controlled globally by static/js/main.js initHandoverToggle() -->
                     <div id="handover-section"
-                         class="mb-5 border border-amber-200 rounded-2xl overflow-hidden
-                                {% if item.status != 'FOUND' %}hidden{% endif %}">
+                         class="slide-section mb-5 border border-amber-200 rounded-2xl overflow-hidden
+                                {% if item.status == 'FOUND' %}open{% endif %}">
                         <div class="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
                             <i class="fa-solid fa-shield-halved text-amber-500 text-sm"></i>
                             <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">
@@ -145,9 +146,9 @@
                             </div>
 
                             <!-- Security officer details — shown only when SECURITY selected -->
-                            <div id="security-details"
-                                 class="grid grid-cols-1 sm:grid-cols-2 gap-4
-                                        {% if item.handover_status != 'SECURITY' %}hidden{% endif %}">
+                            <div id="security-fields"
+                                 class="slide-section grid grid-cols-1 sm:grid-cols-2 gap-4
+                                        {% if item.handover_status == 'SECURITY' %}open{% endif %}">
                                 <div>
                                     <label for="receiver_name" class="block text-sm font-semibold text-gray-700 mb-1.5">
                                         Security Officer Name
@@ -218,22 +219,4 @@
     </div>
 </div>
 
-<script>
-(function () {
-    const statusSel   = document.getElementById('status');
-    const handoverSec = document.getElementById('handover-section');
-    const handoverSel = document.getElementById('handover_status');
-    const secDetails  = document.getElementById('security-details');
-
-    function toggleHandover() {
-        handoverSec.classList.toggle('hidden', statusSel.value !== 'FOUND');
-    }
-    function toggleSecurity() {
-        secDetails.classList.toggle('hidden', handoverSel.value !== 'SECURITY');
-    }
-
-    statusSel.addEventListener('change',   toggleHandover);
-    handoverSel.addEventListener('change', toggleSecurity);
-})();
-</script>
 {% endblock %}

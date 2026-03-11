@@ -85,6 +85,64 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SECTION 1b — Today's Activity Snapshot
+     A lightweight banner showing items reported since UTC midnight.
+     Gives moderators and students an instant situational summary
+     without querying the full archive.
+ ═══════════════════════════════════════════════════════════════ -->
+<div class="mb-8 bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+    <div class="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+
+        <!-- Label -->
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <i class="fa-regular fa-calendar-check text-brand text-sm"></i>
+            </div>
+            <div>
+                <p class="text-sm font-bold text-gray-800">Today's Activity</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">
+                    {{ now.strftime('%d %B %Y') }} · UTC snapshot
+                </p>
+            </div>
+        </div>
+
+        <!-- Counters -->
+        <div class="flex items-center gap-8">
+            <div class="text-center">
+                <p class="text-2xl font-extrabold text-red-500 tabular-nums">{{ today_lost }}</p>
+                <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-0.5">
+                    Lost Today
+                </p>
+            </div>
+            <div class="w-px h-10 bg-gray-100"></div>
+            <div class="text-center">
+                <p class="text-2xl font-extrabold text-emerald-500 tabular-nums">{{ today_found }}</p>
+                <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-0.5">
+                    Found Today
+                </p>
+            </div>
+            <div class="w-px h-10 bg-gray-100"></div>
+            <div class="text-center">
+                <p class="text-2xl font-extrabold text-gray-700 tabular-nums">
+                    {{ today_lost + today_found }}
+                </p>
+                <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-0.5">
+                    Total Today
+                </p>
+            </div>
+        </div>
+
+        <!-- Archive hint -->
+        <a href="{{ url_for('feed') }}"
+           class="text-xs font-semibold text-brand hover:text-brand-dark transition-colors
+                  flex items-center gap-1.5 shrink-0">
+            <i class="fa-solid fa-clock-rotate-left text-[10px]"></i> Full Archive →
+        </a>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SECTION 2 — Auto-Match Engine Alerts
      Only visible when the engine has surfaced pending matches
      for the current user's open Lost reports.

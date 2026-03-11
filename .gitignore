@@ -1,10 +1,12 @@
-# Python
-*.pyc
-*~
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
 .Python
 
-# Virtual Environments
+# ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 .venv/
 env/
@@ -12,26 +14,61 @@ env/
 env.bak/
 venv.bak/
 
-# Environment Variables
+# ── Environment variables / secrets ──────────────────────────────────────────
+# Never commit secrets. Set KG_SECRET_KEY as a real env var before deploying.
 .env
+.env.*
+!.env.example
 
-# Django database
-db.sqlite3
-db.sqlite3-journal
+# ── Flask instance folder ─────────────────────────────────────────────────────
+# Contains the live SQLite database and any instance-level config overrides.
+# Back up instance/kg_portal.db separately; never commit it.
+instance/
 
-# Uploaded Media files
-media/
+# ── User-uploaded media ───────────────────────────────────────────────────────
+# Runtime data — not source code. Back up out-of-band.
+# .gitkeep is excepted so the directory is tracked without its contents.
+static/uploads/*
+!static/uploads/.gitkeep
 
-# Node
-node_modules/
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
 
-# IDEs and Editors
+# ── Distribution / packaging ──────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+
+# ── pip / dependency caches ───────────────────────────────────────────────────
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── Testing & coverage ────────────────────────────────────────────────────────
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.cache/
+
+# ── Type-checker / linter caches ─────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+.pyright/
+
+# ── IDEs and editors ──────────────────────────────────────────────────────────
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
-# OS generated files
+# ── OS generated files ────────────────────────────────────────────────────────
 .DS_Store
 .DS_Store?
 ._*
@@ -39,7 +76,4 @@ node_modules/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Django specific
-*.log
-local_settings.py
+desktop.ini

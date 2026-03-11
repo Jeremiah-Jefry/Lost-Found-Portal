@@ -42,61 +42,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
           rel="stylesheet">
 
-    <style>
-        /* ── Slide-toggle animation (used by report & edit forms) ─────── */
-        .slide-section {
-            max-height: 0;
-            overflow:   hidden;
-            opacity:    0;
-            transition: max-height .38s cubic-bezier(.4,0,.2,1),
-                        opacity    .26s ease;
-        }
-        .slide-section.open { max-height: 900px; opacity: 1; }
-
-        /* ── Stat card left-accent rules ──────────────────────────────── */
-        .stat-card { position: relative; }
-        .stat-card::before {
-            content: ''; position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
-            border-radius: 12px 0 0 12px;
-        }
-        .stat-blue::before   { background: #3b82f6; }
-        .stat-red::before    { background: #ef4444; }
-        .stat-green::before  { background: #10b981; }
-        .stat-violet::before { background: #8b5cf6; }
-
-        /* ── Timeline connector line ───────────────────────────────────── */
-        .timeline-line {
-            position: absolute;
-            left: 15px; top: 32px; bottom: 0;
-            width: 2px;
-            background: linear-gradient(to bottom, #e2e8f0, transparent);
-        }
-
-        /* ── Scrollbar ────────────────────────────────────────────────── */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
-        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-
-        /* ── Pulse ring for "active search" timeline step ─────────────── */
-        @keyframes pulse-ring {
-            0%   { transform: scale(.8); opacity: .8; }
-            70%  { transform: scale(1.5); opacity: 0; }
-            100% { transform: scale(.8); opacity: 0; }
-        }
-        .pulse-ring::before {
-            content: ''; position: absolute; inset: -4px;
-            border-radius: 50%;
-            background: currentColor;
-            opacity: .3;
-            animation: pulse-ring 1.8s ease-out infinite;
-        }
-
-        /* ── Nav active state ─────────────────────────────────────────── */
-        .nav-link-active { background: #eff6ff; color: #3b82f6; font-weight: 600; }
-        .nav-link-active .nav-icon { color: #3b82f6; }
-    </style>
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body class="bg-surface font-sans text-gray-800 h-screen flex overflow-hidden antialiased">
@@ -298,64 +245,6 @@
 </div>
 
 <!-- ═══════════════════════════════════ GLOBAL JS ═════════════════════════════ -->
-<script>
-    /* ── Mobile sidebar ────────────────────────────────────────────────── */
-    function openMobile() {
-        document.getElementById('mobile-overlay').classList.remove('hidden');
-        document.getElementById('mobile-sidebar').classList.remove('-translate-x-full');
-    }
-    function closeMobile() {
-        document.getElementById('mobile-overlay').classList.add('hidden');
-        document.getElementById('mobile-sidebar').classList.add('-translate-x-full');
-    }
-
-    /* ── countUp(el, target, duration)  ────────────────────────────────
-       Animates a number from 0 to `target` over `duration` ms.
-       Usage: add data-count="42" to any element, then call initCounters().
-    ────────────────────────────────────────────────────────────────── */
-    function countUp(el, target, duration) {
-        duration = duration || 900;
-        const start     = performance.now();
-        const formatted = target.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-        function step(now) {
-            const elapsed  = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            // Ease-out cubic
-            const eased = 1 - Math.pow(1 - progress, 3);
-            el.textContent = Math.floor(eased * target)
-                               .toString()
-                               .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            if (progress < 1) requestAnimationFrame(step);
-            else el.textContent = formatted;
-        }
-        requestAnimationFrame(step);
-    }
-
-    function initCounters() {
-        document.querySelectorAll('[data-count]').forEach(function(el) {
-            countUp(el, parseInt(el.dataset.count, 10));
-        });
-    }
-
-    /* Run counters after DOM is ready */
-    document.addEventListener('DOMContentLoaded', initCounters);
-
-    /* ── Auto-dismiss flash messages after 6 s ──────────────────────── */
-    document.addEventListener('DOMContentLoaded', function () {
-        var container = document.getElementById('flash-container');
-        if (!container) return;
-        setTimeout(function () {
-            Array.from(container.children).forEach(function (el, i) {
-                setTimeout(function () {
-                    el.style.transition = 'opacity .4s ease, transform .4s ease';
-                    el.style.opacity    = '0';
-                    el.style.transform  = 'translateY(-6px)';
-                    setTimeout(function () { el.remove(); }, 420);
-                }, i * 120);
-            });
-        }, 6000);
-    });
-</script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

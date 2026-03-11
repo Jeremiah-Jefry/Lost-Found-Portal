@@ -24,7 +24,9 @@ Engineering principles applied in this version:
 import os
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from PIL import Image
 
 from flask import (Flask, render_template, request,
                    redirect, url_for, flash, abort)
@@ -91,6 +93,10 @@ ALLOWED_CATEGORIES  : frozenset[str] = frozenset({'ELECTRONICS', 'DOCUMENTS',
 ALLOWED_HANDOVERS   : frozenset[str] = frozenset({'', 'LEFT_AT_LOCATION',
                                                    'WITH_FINDER', 'SECURITY'})
 ALLOWED_RESOLUTIONS : frozenset[str] = frozenset({'OPEN', 'SECURED', 'RETURNED'})
+
+# Maximum pixel width applied to uploaded images via Pillow before storing.
+# Keeps storage predictable; reduces page-load times for campus users on mobile.
+COMPRESS_MAX_W: int = 1024
 
 # Maximum character limits per field — enforced server-side
 FIELD_LIMITS: dict[str, int] = {
@@ -239,6 +245,40 @@ def is_valid_image(stream) -> bool:
     return any(header.startswith(sig) for sig in IMAGE_MAGIC_BYTES)
 
 
+def compress_image(path: str, ext: str) -> None:
+    """
+    Resize the saved image to max COMPRESS_MAX_W px wide and re-encode
+    at quality 85 to keep upload storage predictable.
+
+    Format-specific behaviour:
+      JPEG / WEBP — converted to sRGB, quality=85
+      PNG         — resized only; transparency preserved, lossless
+      GIF         — skipped entirely (animation frames would be corrupted)
+
+    Non-fatal: logs a warning on failure but does not roll back the upload.
+    """
+    if ext == 'gif':
+        return  # animated GIFs would be broken by a single-frame re-save
+
+    try:
+        with Image.open(path) as img:
+            if img.width > COMPRESS_MAX_W:
+                ratio    = COMPRESS_MAX_W / img.width
+                new_size = (COMPRESS_MAX_W, max(1, int(img.height * ratio)))
+                img      = img.resize(new_size, Image.LANCZOS)
+
+            if ext in ('jpg', 'jpeg'):
+                img = img.convert('RGB')   # drop alpha — JPEG cannot store it
+                img.save(path, format='JPEG', optimize=True, quality=85)
+            elif ext == 'webp':
+                img.save(path, format='WEBP', quality=85)
+            else:  # png
+                img.save(path, format='PNG', optimize=True)
+
+    except Exception as exc:
+        app.logger.warning('compress_image(%s) failed: %s', path, exc)
+
+
 def save_upload(file) -> tuple[str | None, bool]:
     """
     Validate and persist an uploaded image.
@@ -264,7 +304,9 @@ def save_upload(file) -> tuple[str | None, bool]:
         f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:10]}.{ext}"
     )
     file.stream.seek(0)
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(full_path)
+    compress_image(full_path, ext)   # resize + quality-compress via Pillow
     return filename, True
 
 
@@ -563,6 +605,65 @@ def run_auto_match(found_item: Item) -> int:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  IMAGE EXPIRY — 30-DAY CLEANUP
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def cleanup_old_images() -> int:
+    """
+    Delete physical image files for items reported more than 30 days ago.
+
+    Design decisions:
+      • Database records are NEVER deleted — the text archive remains fully
+        searchable and auditable even after the image is gone.
+      • Only item.image_filename is cleared (set to None) so templates
+        gracefully fall back to the "No Image" placeholder.
+      • File-system errors are logged as warnings but do not abort the loop —
+        a missing file (e.g. already manually deleted) is not a fatal condition.
+      • Safe to call at startup and via the `flask cleanup-images` CLI command;
+        the column-None guard makes it fully idempotent.
+
+    Returns: count of image records purged.
+    """
+    cutoff  = datetime.utcnow() - timedelta(days=30)
+    expired = (Item.query
+               .filter(Item.date_reported < cutoff,
+                       Item.image_filename.isnot(None))
+               .all())
+
+    purged = 0
+    for item in expired:
+        path = os.path.join(app.config['UPLOAD_FOLDER'], item.image_filename)
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError as exc:
+            app.logger.warning(
+                'cleanup_old_images: cannot delete %s: %s', path, exc
+            )
+        item.image_filename = None   # clear column even if file was already absent
+        purged += 1
+
+    if purged:
+        try:
+            db.session.commit()
+            app.logger.info(
+                'cleanup_old_images: purged %d expired image(s).', purged
+            )
+        except Exception as exc:
+            db.session.rollback()
+            app.logger.error('cleanup_old_images: commit failed: %s', exc)
+
+    return purged
+
+
+@app.cli.command('cleanup-images')
+def cleanup_images_cmd():
+    """Delete image files for items reported more than 30 days ago."""
+    n = cleanup_old_images()
+    print(f'Purged {n} expired image(s).')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  ROUTES — PUBLIC
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -570,6 +671,13 @@ def run_auto_match(found_item: Item) -> int:
 def dashboard():
     total_lost  = Item.query.filter_by(status='LOST').count()
     total_found = Item.query.filter_by(status='FOUND').count()
+
+    # Today's activity snapshot (UTC midnight as boundary)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_lost  = Item.query.filter(
+        Item.status == 'LOST',  Item.date_reported >= today_start).count()
+    today_found = Item.query.filter(
+        Item.status == 'FOUND', Item.date_reported >= today_start).count()
 
     # Two separate streams — the key UX decision for high-stress scenarios
     recent_lost  = (Item.query.filter_by(status='LOST')
@@ -604,6 +712,9 @@ def dashboard():
         total_lost=total_lost,
         total_found=total_found,
         total_items=total_lost + total_found,
+        today_lost=today_lost,
+        today_found=today_found,
+        now=datetime.utcnow(),
         recent_lost=recent_lost,
         recent_found=recent_found,
         my_items=my_items,
@@ -990,6 +1101,10 @@ with app.app_context():
         if not _col_exists(insp, 'user', 'created_at'):
             conn.execute(text("ALTER TABLE user ADD COLUMN created_at DATETIME"))
             conn.execute(text("UPDATE user SET created_at = CURRENT_TIMESTAMP"))
+
+    # Run image expiry on every startup to keep storage clean.
+    # The function is idempotent and very fast when there is nothing to clean.
+    cleanup_old_images()
 
 
 if __name__ == '__main__':
