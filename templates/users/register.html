@@ -1,27 +1,128 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
 
-{% block title %}Register - KG Recovery Portal{% endblock %}
+{% block title %}Register - KG Portal{% endblock %}
+{% block page_title %}Create Account{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 mt-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white text-center">
-                <h4>Join the Community</h4>
+<div class="flex items-center justify-center min-h-[70vh] py-8">
+    <div class="w-full max-w-lg">
+        <!-- Glass Register Card -->
+        <div class="glass-panel rounded-2xl overflow-hidden shadow-2xl">
+            <!-- Header -->
+            <div
+                class="bg-gradient-to-r from-accent/20 to-purple-700/20 border-b border-slate-700/50 px-8 py-8 text-center">
+                <div
+                    class="w-16 h-16 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/20">
+                    <i class="bi bi-person-plus-fill text-3xl text-accent"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white tracking-wide">Join the Community</h2>
+                <p class="text-sm text-slate-400 mt-2">Create your account to start reporting and finding items.</p>
             </div>
-            <div class="card-body p-4">
+
+            <!-- Form Body -->
+            <div class="p-8">
                 <form method="POST">
                     {% csrf_token %}
-                    {{ form|crispy }}
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+
+                    {% if form.errors %}
+                    <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-sm">
+                        <div class="flex items-center mb-2 text-red-300">
+                            <i class="bi bi-exclamation-triangle-fill text-red-500 mr-2"></i>
+                            <span class="font-bold">Please fix the errors below</span>
+                        </div>
+                        {% for field in form %}
+                        {% for error in field.errors %}
+                        <p class="text-red-400 text-xs mt-1 flex items-center"><i class="bi bi-dot mr-1"></i>{{
+                            field.label }}: {{ error }}</p>
+                        {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                        <p class="text-red-400 text-xs mt-1 flex items-center"><i class="bi bi-dot mr-1"></i>{{ error }}
+                        </p>
+                        {% endfor %}
                     </div>
+                    {% endif %}
+
+                    <!-- Username -->
+                    <div class="mb-5">
+                        <label for="id_username"
+                            class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Username</label>
+                        <div class="relative">
+                            <i
+                                class="bi bi-person absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                            <input type="text" name="username" id="id_username"
+                                value="{{ form.username.value|default:'' }}" required autofocus
+                                class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.username.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                placeholder="Choose a username">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-5">
+                        <label for="id_email"
+                            class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Email
+                            Address</label>
+                        <div class="relative">
+                            <i
+                                class="bi bi-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                            <input type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}"
+                                class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.email.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                placeholder="your@email.com">
+                        </div>
+                    </div>
+
+                    <!-- Password Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                        <div>
+                            <label for="id_password1"
+                                class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Password</label>
+                            <div class="relative">
+                                <i
+                                    class="bi bi-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                                <input type="password" name="password1" id="id_password1" required
+                                    class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.password1.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                    placeholder="Min 8 characters">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="id_password2"
+                                class="block text-sm font-bold text-slate-300 mb-2 tracking-wider uppercase">Confirm</label>
+                            <div class="relative">
+                                <i
+                                    class="bi bi-lock-fill absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                                <input type="password" name="password2" id="id_password2" required
+                                    class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border {% if form.password2.errors %}border-red-500{% else %}border-slate-700{% endif %} rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                                    placeholder="Repeat password">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Rules Hint -->
+                    <div class="mb-6 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Password Requirements
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-1">
+                            <li class="flex items-center"><i class="bi bi-check-circle text-slate-500 mr-2"></i>At least
+                                8 characters</li>
+                            <li class="flex items-center"><i class="bi bi-check-circle text-slate-500 mr-2"></i>Not
+                                entirely numeric</li>
+                            <li class="flex items-center"><i class="bi bi-check-circle text-slate-500 mr-2"></i>Not too
+                                similar to your username</li>
+                        </ul>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="w-full py-3.5 bg-accent text-white font-bold rounded-xl hover:bg-blue-600 transition-all duration-300 shadow-lg shadow-accent/30 hover:shadow-accent/50 text-sm tracking-wider uppercase flex items-center justify-center gap-2">
+                        <i class="bi bi-rocket-takeoff"></i> Create Account
+                    </button>
                 </form>
             </div>
-            <div class="card-footer text-center bg-transparent py-3">
-                <p class="mb-0 text-muted">Already have an account? <a href="{% url 'login' %}"
-                        class="text-primary text-decoration-none fw-semibold">Sign In</a></p>
+
+            <!-- Footer -->
+            <div class="border-t border-slate-700/50 px-8 py-5 text-center bg-slate-800/30">
+                <p class="text-sm text-slate-400">Already have an account? <a href="{% url 'login' %}"
+                        class="text-accent font-bold hover:text-white transition-colors">Sign In</a></p>
             </div>
         </div>
     </div>

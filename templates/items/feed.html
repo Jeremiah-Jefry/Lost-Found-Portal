@@ -1,89 +1,141 @@
 {% extends "base.html" %}
 
-{% block title %}Item Feed - KG Recovery Portal{% endblock %}
+{% block title %}Item Feed - KG Portal{% endblock %}
+{% block page_title %}Item Feed{% endblock %}
 
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-5">
-        <h2>Lost and Found Items</h2>
-        <p class="text-muted mb-0">Browse recently reported items in the KG Community.</p>
+<!-- Action Header -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <div>
+        <h2 class="text-2xl font-bold text-white">Community Recovery Feed</h2>
+        <p class="text-sm text-slate-400 mt-1">Browse all reported items across the KG campus.</p>
     </div>
-    <div class="col-md-4">
-        <form method="GET" action="{% url 'item_feed' %}" class="d-flex">
-            <input class="form-control me-2 shadow-sm" type="search" name="q"
-                placeholder="Search title or description..." value="{{ query|default_if_none:'' }}" aria-label="Search">
-            <button class="btn btn-outline-success shadow-sm" type="submit">Search</button>
-        </form>
-    </div>
-    <div class="col-md-3 text-end mt-3 mt-md-0">
-        <a href="{% url 'report_item' %}" class="btn btn-primary shadow-sm w-100">Report an Item</a>
+    <a href="{% url 'report_item' %}"
+        class="inline-flex items-center px-6 py-3 bg-accent text-white font-bold rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-accent/20 text-sm tracking-wider uppercase gap-2 shrink-0">
+        <i class="bi bi-plus-lg"></i> Report Item
+    </a>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col md:flex-row md:items-center gap-4">
+    <!-- Search -->
+    <form method="GET" action="{% url 'item_feed' %}" class="flex-1 flex gap-3">
+        <div class="relative flex-1">
+            <i class="bi bi-search absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+            <input type="text" name="q" value="{{ query|default:'' }}"
+                placeholder="Search by title, description, location..."
+                class="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-sm">
+        </div>
+        <button type="submit"
+            class="px-6 py-3 bg-accent/20 text-accent border border-accent/30 font-bold rounded-xl hover:bg-accent hover:text-white transition-all text-sm">
+            Search
+        </button>
+    </form>
+
+    <!-- Status Filter Pills -->
+    <div class="flex gap-2 shrink-0">
+        <a href="{% url 'item_feed' %}"
+            class="px-4 py-2 rounded-full text-sm font-bold transition-all {% if not current_status %}bg-white/10 text-white border border-white/20{% else %}text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500{% endif %}">
+            All
+        </a>
+        <a href="{% url 'item_feed' %}?status=LOST"
+            class="px-4 py-2 rounded-full text-sm font-bold transition-all {% if current_status == 'LOST' %}bg-red-500/20 text-red-400 border border-red-500/40{% else %}text-slate-400 border border-slate-700 hover:text-red-400 hover:border-red-500/40{% endif %}">
+            <i class="bi bi-exclamation-circle mr-1"></i>Lost
+        </a>
+        <a href="{% url 'item_feed' %}?status=FOUND"
+            class="px-4 py-2 rounded-full text-sm font-bold transition-all {% if current_status == 'FOUND' %}bg-green-500/20 text-green-400 border border-green-500/40{% else %}text-slate-400 border border-slate-700 hover:text-green-400 hover:border-green-500/40{% endif %}">
+            <i class="bi bi-check-circle mr-1"></i>Found
+        </a>
     </div>
 </div>
 
+<!-- Active Search Results Banner -->
 {% if query %}
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="alert alert-info py-2">
-            Showing results for <strong>"{{ query }}"</strong>
-            {% if current_status %} ({{ current_status }}){% endif %}
-            <a href="{% url 'item_feed' %}" class="float-end text-decoration-none border-bottom border-info">Clear
-                Filters</a>
-        </div>
-    </div>
+<div class="glass-panel rounded-xl p-4 mb-6 flex items-center justify-between border-l-4 border-accent">
+    <p class="text-sm text-slate-300"><i class="bi bi-funnel-fill text-accent mr-2"></i>Showing results for: <strong
+            class="text-white">"{{ query }}"</strong>{% if current_status %} <span class="text-slate-500">({{
+            current_status }})</span>{% endif %}</p>
+    <a href="{% url 'item_feed' %}" class="text-xs text-accent hover:text-white font-bold transition-colors"><i
+            class="bi bi-x-lg mr-1"></i>Clear</a>
 </div>
 {% endif %}
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex gap-2">
-            <a href="{% url 'item_feed' %}"
-                class="btn {% if not current_status %}btn-secondary{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 shadow-sm">All
-                Items</a>
-            <a href="{% url 'item_feed' %}?status=LOST"
-                class="btn {% if current_status == 'LOST' %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4 shadow-sm">Lost</a>
-            <a href="{% url 'item_feed' %}?status=FOUND"
-                class="btn {% if current_status == 'FOUND' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-4 shadow-sm">Found</a>
-        </div>
-    </div>
-</div>
-
-<div class="row row-cols-1 row-cols-md-3 g-4">
+<!-- Items Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {% for item in items %}
-    <div class="col">
-        <div class="card h-100 shadow-sm border-0">
+    <a href="{% url 'item_detail' item.pk %}"
+        class="glass-panel rounded-2xl overflow-hidden group hover:shadow-2xl hover:shadow-accent/5 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer block">
+        <!-- Image Area -->
+        <div class="h-48 relative overflow-hidden">
             {% if item.image %}
-            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}"
-                style="height: 200px; object-fit: cover;">
+            <img src="{{ item.image.url }}" alt="{{ item.title }}"
+                class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105">
             {% else %}
-            <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
-                style="height: 200px;">
-                <i class="bi bi-image" style="font-size: 3rem;"></i> No Image Provided
+            <div class="w-full h-full bg-slate-800 flex items-center justify-center border-b border-slate-700/50">
+                <i class="bi bi-box-seam text-5xl text-slate-700 group-hover:text-slate-600 transition-colors"></i>
             </div>
             {% endif %}
-            <div class="card-body">
-                <span
-                    class="badge {% if item.status == 'LOST' %}bg-danger{% else %}bg-success{% endif %} mb-2 px-3 py-2 rounded-pill">
+
+            <!-- Status Badge -->
+            <div class="absolute top-4 right-4">
+                <span class="px-3 py-1.5 text-xs font-extrabold rounded-full shadow-lg backdrop-blur-md uppercase tracking-wider
+                    {% if item.status == 'LOST' %}bg-red-500/90 text-white border border-red-400/50
+                    {% else %}bg-green-500/90 text-white border border-green-400/50{% endif %}">
                     {{ item.get_status_display }}
                 </span>
-                <h5 class="card-title fw-bold text-truncate">{{ item.title }}</h5>
-                <p class="card-text text-muted small mb-2">
-                    <i class="bi bi-geo-alt-fill"></i> {{ item.location_description|truncatechars:30 }}
-                </p>
-                <p class="card-text">{{ item.description|truncatechars:60 }}</p>
             </div>
-            <div class="card-footer bg-transparent border-top-0 pt-0">
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">{{ item.date_reported|timesince }} ago</small>
-                    <a href="{% url 'item_detail' item.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
-                </div>
+
+            <!-- Category Overlay -->
+            <div
+                class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900 via-slate-900/70 to-transparent p-4">
+                <p class="text-xs font-bold text-accent uppercase tracking-widest">{{ item.get_category_display }}</p>
             </div>
         </div>
-    </div>
+
+        <!-- Card Body -->
+        <div class="p-5">
+            <h3 class="text-base font-bold text-white truncate mb-2 group-hover:text-accent transition-colors">{{
+                item.title }}</h3>
+            <div class="flex items-center text-sm text-slate-400 mb-3">
+                <i class="bi bi-geo-alt text-slate-500 mr-2"></i>
+                <span class="truncate">{{ item.location_description|truncatechars:30 }}</span>
+            </div>
+
+            {% if item.handover_status %}
+            <div class="mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs">
+                <span class="text-amber-400 font-bold"><i class="bi bi-shield-check mr-1"></i>{{
+                    item.get_handover_status_display }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 pb-5 pt-0">
+            <div class="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                <span class="text-xs text-slate-500 font-medium"><i class="bi bi-clock mr-1"></i>{{
+                    item.date_reported|timesince }} ago</span>
+                <span
+                    class="text-sm font-bold text-accent group-hover:text-white transition-colors flex items-center gap-1">
+                    View <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </span>
+            </div>
+        </div>
+    </a>
     {% empty %}
-    <div class="col-12 text-center py-5">
-        <div class="text-muted">
-            <h4 class="fw-normal">No items have been reported yet.</h4>
-            <p>Be the first to help the community by reporting a found item.</p>
+    <!-- Empty State -->
+    <div class="col-span-full">
+        <div class="glass-panel rounded-2xl p-16 text-center border-dashed border-2 border-slate-700/50">
+            <div
+                class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-8 shadow-inner ring-4 ring-slate-700/30">
+                <i class="bi bi-inbox text-5xl text-slate-600"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-3">No Items Reported Yet</h3>
+            <p class="text-slate-400 max-w-md mx-auto mb-8">The community feed is empty. Be the first to help the KG
+                campus by reporting a found item or flagging a lost one.</p>
+            <a href="{% url 'report_item' %}"
+                class="inline-flex items-center px-8 py-3.5 bg-accent text-white font-bold rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-accent/20 text-sm tracking-wider uppercase gap-2">
+                <i class="bi bi-plus-lg"></i> Report First Item
+            </a>
         </div>
     </div>
     {% endfor %}
