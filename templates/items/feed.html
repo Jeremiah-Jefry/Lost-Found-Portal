@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Item Feed - KG Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-5">
+        <h2>Lost and Found Items</h2>
+        <p class="text-muted mb-0">Browse recently reported items in the KG Community.</p>
+    </div>
+    <div class="col-md-4">
+        <form method="GET" action="{% url 'item_feed' %}" class="d-flex">
+            <input class="form-control me-2 shadow-sm" type="search" name="q"
+                placeholder="Search title or description..." value="{{ query|default_if_none:'' }}" aria-label="Search">
+            <button class="btn btn-outline-success shadow-sm" type="submit">Search</button>
+        </form>
+    </div>
+    <div class="col-md-3 text-end mt-3 mt-md-0">
+        <a href="{% url 'report_item' %}" class="btn btn-primary shadow-sm w-100">Report an Item</a>
+    </div>
+</div>
+
+{% if query %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info py-2">
+            Showing results for <strong>"{{ query }}"</strong>
+            {% if current_status %} ({{ current_status }}){% endif %}
+            <a href="{% url 'item_feed' %}" class="float-end text-decoration-none border-bottom border-info">Clear
+                Filters</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-2">
+            <a href="{% url 'item_feed' %}"
+                class="btn {% if not current_status %}btn-secondary{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 shadow-sm">All
+                Items</a>
+            <a href="{% url 'item_feed' %}?status=LOST"
+                class="btn {% if current_status == 'LOST' %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-4 shadow-sm">Lost</a>
+            <a href="{% url 'item_feed' %}?status=FOUND"
+                class="btn {% if current_status == 'FOUND' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-4 shadow-sm">Found</a>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for item in items %}
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}"
+                style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
+                style="height: 200px;">
+                <i class="bi bi-image" style="font-size: 3rem;"></i> No Image Provided
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <span
+                    class="badge {% if item.status == 'LOST' %}bg-danger{% else %}bg-success{% endif %} mb-2 px-3 py-2 rounded-pill">
+                    {{ item.get_status_display }}
+                </span>
+                <h5 class="card-title fw-bold text-truncate">{{ item.title }}</h5>
+                <p class="card-text text-muted small mb-2">
+                    <i class="bi bi-geo-alt-fill"></i> {{ item.location_description|truncatechars:30 }}
+                </p>
+                <p class="card-text">{{ item.description|truncatechars:60 }}</p>
+            </div>
+            <div class="card-footer bg-transparent border-top-0 pt-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">{{ item.date_reported|timesince }} ago</small>
+                    <a href="{% url 'item_detail' item.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <div class="text-muted">
+            <h4 class="fw-normal">No items have been reported yet.</h4>
+            <p>Be the first to help the community by reporting a found item.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register - KG Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 mt-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white text-center">
+                <h4>Join the Community</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-transparent py-3">
+                <p class="mb-0 text-muted">Already have an account? <a href="{% url 'login' %}"
+                        class="text-primary text-decoration-none fw-semibold">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

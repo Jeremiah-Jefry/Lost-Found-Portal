@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center mt-5">
+        <h1 class="display-4 fw-bold">Welcome to the KG Recovery Portal</h1>
+        <p class="lead text-muted">A central hub for finding lost items and returning them to their rightful owners on
+            the KG College Campus.</p>
+        <hr class="my-4">
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="#" class="btn btn-primary btn-lg px-5 shadow-sm">Report a Lost Item</a>
+            <a href="#" class="btn btn-outline-secondary btn-lg px-5 shadow-sm">Search Found Items</a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5 pt-5 text-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100 bg-light">
+            <div class="card-body py-5">
+                <h3 class="fw-bold text-danger mb-3">{{ total_lost }}</h3>
+                <p class="text-muted mb-0">Items Reported Lost</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body py-5">
+                <h3 class="fw-bold text-success mb-3">0</h3>
+                <p class="text-muted mb-0">Items Successfully Found</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100 bg-light">
+            <div class="card-body py-5">
+                <h3 class="fw-bold text-success mb-3">{{ total_found }}</h3>
+                <p class="text-muted mb-0">Items Successfully Found</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated and my_items is not None %}
+<div class="row mt-5 pt-4 border-top">
+    <div class="col-12 mb-4">
+        <h3 class="fw-bold">My Reported Items</h3>
+        <p class="text-muted">Manage the items you've submitted to the recovery portal.</p>
+    </div>
+</div>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for item in my_items %}
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}"
+                style="height: 150px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
+                style="height: 150px;">
+                <i class="bi bi-image" style="font-size: 2rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body py-3">
+                <span
+                    class="badge {% if item.status == 'LOST' %}bg-danger{% else %}bg-success{% endif %} mb-2 px-2 py-1 rounded-pill"
+                    style="font-size: 0.7rem;">
+                    {{ item.get_status_display }}
+                </span>
+                <h6 class="card-title fw-bold text-truncate mb-1">{{ item.title }}</h6>
+                <small class="text-muted"><i class="bi bi-clock-history"></i> {{ item.date_reported|date:"M d, Y"
+                    }}</small>
+            </div>
+            <div class="card-footer bg-transparent pt-0 text-center">
+                <a href="{% url 'item_detail' item.pk %}" class="btn btn-sm btn-outline-secondary w-100">Manage</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 py-4 text-center border rounded bg-light">
+        <p class="text-muted mb-0">You haven't reported any items yet.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

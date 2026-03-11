@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.title }} - KG Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'item_feed' %}">Items</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ item.title|truncatechars:30 }}</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow-sm border-0 mt-3">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}"
+                style="max-height: 500px; object-fit: contain; background-color: #f8f9fa;">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center text-muted"
+                style="height: 300px;">
+                <div class="text-center">
+                    <i class="bi bi-image" style="font-size: 4rem;"></i>
+                    <p class="mt-2 text-uppercase fw-semibold" style="letter-spacing: 1px;">No Image Available</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card-body p-5">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <span
+                            class="badge {% if item.status == 'LOST' %}bg-danger{% else %}bg-success{% endif %} mb-2 px-3 py-2 rounded-pill fs-6">
+                            {{ item.get_status_display }}
+                        </span>
+                        <h2 class="card-title fw-bold mb-0">{{ item.title }}</h2>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-sm-6 text-muted">
+                        <p class="mb-1"><i class="fw-bold bi bi-geo-alt-fill text-primary"></i>
+                            <strong>Location:</strong> {{ item.location_description }}
+                        </p>
+                        <p class="mb-1"><i class="fw-bold bi bi-clock-history text-primary"></i>
+                            <strong>Reported:</strong> {{ item.date_reported|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    <div class="col-sm-6 text-muted">
+                        <p class="mb-1"><i class="fw-bold bi bi-person-fill text-primary"></i>
+                            <strong>Reporter:</strong> {{ item.reporter.username }}
+                        </p>
+                    </div>
+                </div>
+
+                <hr class="mb-4">
+
+                <h5 class="fw-bold mb-3">Description</h5>
+                <p class="card-text text-body" style="white-space: pre-line;">{{ item.description }}</p>
+
+                {% if user.is_authenticated and user == item.reporter %}
+                <div class="mt-5 pt-3 border-top d-flex gap-2">
+                    <a href="{% url 'edit_item' item.pk %}" class="btn btn-outline-secondary">Edit Item</a>
+                    <a href="{% url 'delete_item' item.pk %}" class="btn btn-outline-danger">Delete Item</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

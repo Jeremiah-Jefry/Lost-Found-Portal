@@ -1,0 +1,45 @@
+# Python
+*.pyc
+*~
+__pycache__/
+.Python
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+env.bak/
+venv.bak/
+
+# Environment Variables
+.env
+
+# Django database
+db.sqlite3
+db.sqlite3-journal
+
+# Uploaded Media files
+media/
+
+# Node
+node_modules/
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Django specific
+*.log
+local_settings.py
