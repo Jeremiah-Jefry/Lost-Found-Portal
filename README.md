@@ -1,4 +1,4 @@
-# KG Community Recovery Portal
+# KG Recovery Portal
 
 A multi-college campus **Lost & Found management web application** built with Flask.
 Students and staff report lost or found items, track their lifecycle through a resolution

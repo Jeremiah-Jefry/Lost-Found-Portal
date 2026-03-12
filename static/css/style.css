@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   KG Community Recovery Portal — style.css
+   KG Recovery Portal — style.css
    Custom styles that sit on top of Tailwind CDN.
    All Tailwind utility classes are inlined in templates; this file handles
    only behaviours that cannot be expressed with utilities alone.

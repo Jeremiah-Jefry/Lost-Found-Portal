@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   KG Community Recovery Portal — main.js
+   KG Recovery Portal — main.js
    Global client-side utilities loaded on every page via base.html.
 
    Sections:

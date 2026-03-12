@@ -1,5 +1,5 @@
 """
-KG Community Recovery Portal — app.py
+KG Recovery Portal — app.py
 =======================================
 Mission-critical production backend for multi-college campus deployment.
 
@@ -204,14 +204,11 @@ def validate_report_form(form) -> tuple[dict, list[str]]:
         errors.append('Invalid category selected.')
     data['category'] = category if category in ALLOWED_CATEGORIES else 'OTHER'
 
-    # ── Location — validated against the predefined zone list ────────────────
-    location = form.get('location', '').strip()
+    # ── Location — free-text, cleaned and length-capped ──────────────────────
+    location = clean_text(form.get('location', ''), FIELD_LIMITS['location'])
     if not location:
         errors.append('Campus location is required.')
-    elif location not in _VALID_LOCATIONS:
-        # Reject anything not in our known list (prevents freeform injection)
-        errors.append('Please select a valid location from the dropdown.')
-    data['location'] = location if location in _VALID_LOCATIONS else ''
+    data['location'] = location
 
     # ── Optional handover fields ──────────────────────────────────────────────
     hs = form.get('handover_status', '').strip()

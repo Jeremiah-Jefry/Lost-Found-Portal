@@ -1,4 +1,4 @@
-# KG Community Recovery Portal: Frontend Design Specification
+# KG Recovery Portal: Frontend Design Specification
 
 ## 1. The Vibe: Tech-Centric & Professional
 
