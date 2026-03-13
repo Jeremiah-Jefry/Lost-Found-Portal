@@ -31,7 +31,6 @@ from PIL import Image
 from flask import (Flask, render_template, request,
                    redirect, url_for, flash, abort)
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text, inspect as sa_inspect
 from flask_login import (LoginManager, UserMixin,
                          login_user, logout_user,
                          login_required, current_user)
@@ -118,39 +117,6 @@ IMAGE_MAGIC_BYTES: list[bytes] = [
     b'RIFF',           # WEBP (4-byte RIFF header precedes "WEBP")
 ]
 
-# Campus location zones — single source of truth for model & templates
-LOCATION_ZONES: dict[str, list[str]] = {
-    'Canteens': [
-        'Canteen 1 — Arts Block',
-        'Canteen 2 — Science Block',
-        'Canteen 3 — Engineering Block',
-    ],
-    'Parking Lots': [
-        'Parking Lot A — Main Gate',
-        'Parking Lot B — North Campus',
-        'Parking Lot C — Hostel Zone',
-    ],
-    'Academic Buildings': [
-        'Central Library',
-        'Main Administrative Block',
-        'Lecture Hall Complex',
-        'Workshop / Labs',
-    ],
-    'Campus Facilities': [
-        'Auditorium',
-        'Sports Complex',
-        'Boys Hostel',
-        'Girls Hostel',
-        'Medical Center',
-    ],
-    'Other': ['Other / Unknown Location'],
-}
-
-# Pre-computed flat set for O(1) location validation
-_VALID_LOCATIONS: frozenset[str] = frozenset(
-    z for zones in LOCATION_ZONES.values() for z in zones
-)
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  VALIDATION HELPERS
@@ -177,7 +143,7 @@ def validate_report_form(form) -> tuple[dict, list[str]]:
       • description — required, max 2 000 chars
       • status      — must be in ALLOWED_STATUSES
       • category    — must be in ALLOWED_CATEGORIES
-      • location    — must be an exact LOCATION_ZONES value
+      • location    — required, free-text, max 255 chars
       • handover_*  — optional; handover_status validated against allowlist
     """
     errors: list[str] = []
@@ -319,6 +285,7 @@ class User(UserMixin, db.Model):
     username      = db.Column(db.String(80),  unique=True, nullable=False, index=True)
     email         = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
+    role          = db.Column(db.String(10),  nullable=False, default='USER')
     created_at    = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     items = db.relationship('Item', backref='reporter', lazy='select',
@@ -329,6 +296,24 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_staff(self) -> bool:
+        """True for STAFF and ADMIN — grants security-level privileges."""
+        return self.role in ('STAFF', 'ADMIN')
+
+    @property
+    def is_admin(self) -> bool:
+        """True only for ADMIN — super-user, bypasses all RBAC gates."""
+        return self.role == 'ADMIN'
+
+    @property
+    def role_label(self) -> str:
+        return {
+            'USER':  'Student',
+            'STAFF': 'Security Staff',
+            'ADMIN': 'Administrator',
+        }.get(self.role, self.role)
 
     def __repr__(self) -> str:
         return f'<User {self.username!r}>'
@@ -443,6 +428,7 @@ class ItemLog(db.Model):
                            nullable=False, index=True)
     user_id    = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'),
                            nullable=True)
+    actor_role = db.Column(db.String(10), nullable=True)   # USER | STAFF | ADMIN
     action     = db.Column(db.String(50), nullable=False)
     note       = db.Column(db.Text,       nullable=True)
     from_value = db.Column(db.String(100), nullable=True)
@@ -455,6 +441,14 @@ class ItemLog(db.Model):
     @property
     def actor_name(self) -> str:
         return self.actor.username if self.actor else 'System'
+
+    @property
+    def actor_role_badge(self) -> str:
+        return {
+            'STAFF': 'Security Staff',
+            'ADMIN': 'Admin',
+            'USER':  '',
+        }.get(self.actor_role or '', '')
 
     @property
     def action_label(self) -> str:
@@ -533,10 +527,12 @@ def log_event(item_id: int, action: str,
     log_event() is intentionally side-effect-only so it can be batched into
     the same commit as the change it documents — atomicity guaranteed.
     """
-    actor_id = current_user.id if current_user.is_authenticated else None
+    actor_id   = current_user.id   if current_user.is_authenticated else None
+    actor_role = current_user.role if current_user.is_authenticated else None
     db.session.add(ItemLog(
         item_id    = item_id,
         user_id    = actor_id,
+        actor_role = actor_role,
         action     = action,
         note       = (note or '')[:500],
         from_value = (from_val or '')[:100],
@@ -775,11 +771,11 @@ def report():
         if errors:
             for err in errors:
                 flash(err, 'error')
-            return render_template('report.html', location_zones=LOCATION_ZONES)
+            return render_template('report.html')
 
         image_filename, upload_ok = save_upload(request.files.get('image'))
         if not upload_ok:
-            return render_template('report.html', location_zones=LOCATION_ZONES)
+            return render_template('report.html')
 
         item = Item(image_filename=image_filename, user_id=current_user.id, **data)
 
@@ -796,7 +792,7 @@ def report():
             db.session.rollback()
             app.logger.error('report() commit failed: %s', exc)
             flash('A database error occurred. Please try again.', 'error')
-            return render_template('report.html', location_zones=LOCATION_ZONES)
+            return render_template('report.html')
 
         # Run match engine after successful commit
         if item.status == 'FOUND':
@@ -813,7 +809,7 @@ def report():
 
         return redirect(url_for('feed'))
 
-    return render_template('report.html', location_zones=LOCATION_ZONES)
+    return render_template('report.html')
 
 
 @app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -829,11 +825,11 @@ def edit_item(item_id):
         if errors:
             for err in errors:
                 flash(err, 'error')
-            return render_template('edit.html', item=item, location_zones=LOCATION_ZONES)
+            return render_template('edit.html', item=item)
 
         image_filename, upload_ok = save_upload(request.files.get('image'))
         if not upload_ok:
-            return render_template('edit.html', item=item, location_zones=LOCATION_ZONES)
+            return render_template('edit.html', item=item)
 
         # Detect and log handover change separately for the audit trail
         old_handover = item.handover_status
@@ -859,34 +855,55 @@ def edit_item(item_id):
             db.session.rollback()
             app.logger.error('edit_item(%d) commit failed: %s', item_id, exc)
             flash('A database error occurred. Please try again.', 'error')
-            return render_template('edit.html', item=item, location_zones=LOCATION_ZONES)
+            return render_template('edit.html', item=item)
 
         flash('Report updated successfully.', 'success')
         return redirect(url_for('item_detail', item_id=item.id))
 
-    return render_template('edit.html', item=item, location_zones=LOCATION_ZONES)
+    return render_template('edit.html', item=item)
 
 
 @app.route('/item/<int:item_id>/resolve', methods=['POST'])
 @login_required
 def resolve_item(item_id):
     """
-    Advance the resolution state machine for an item.
-    Only the item owner may call this route.
+    Advance the resolution state machine — enforces 3-tier RBAC rules.
 
-    Allowed transitions (any direction for flexibility in real-world use):
-      OPEN  → SECURED  → RETURNED
-               SECURED  → OPEN   (reopen if custody is lost)
-               RETURNED → OPEN   (reopen if return was incorrect)
+    Hierarchy:
+      ADMIN  — super-user; may set any status on any item.
+      STAFF  — security staff; may mark RETURNED on SECURITY-held items.
+      USER   — original reporter; may mark RETURNED on non-SECURITY items,
+               and may SECURE/REOPEN their own reports.
+
+    Security-custody rule:
+      handover_status == 'SECURITY'  →  only STAFF or ADMIN can mark RETURNED.
+      handover_status != 'SECURITY'  →  only the original reporter can mark RETURNED.
     """
-    item = db.get_or_404(Item, item_id)
-    if item.user_id != current_user.id:
-        abort(403)
-
+    item       = db.get_or_404(Item, item_id)
     new_status = request.form.get('resolution_status', '').strip()
+
     if new_status not in ALLOWED_RESOLUTIONS:
         flash('Invalid status value.', 'error')
         return redirect(url_for('item_detail', item_id=item.id))
+
+    # ── RBAC evaluation ───────────────────────────────────────────────────────
+    is_reporter       = current_user.id == item.user_id
+    is_staff_or_admin = current_user.is_staff   # STAFF or ADMIN
+    is_admin          = current_user.is_admin
+
+    if not is_admin:
+        if new_status == 'RETURNED':
+            if item.handover_status == 'SECURITY' and not is_staff_or_admin:
+                flash('This item is in security custody. '
+                      'Only Security Staff can close it.', 'error')
+                return redirect(url_for('item_detail', item_id=item.id))
+            if item.handover_status != 'SECURITY' and not is_reporter:
+                flash('Only the original reporter can close this item.', 'error')
+                return redirect(url_for('item_detail', item_id=item.id))
+        else:  # SECURED or OPEN
+            if not (is_reporter or is_staff_or_admin):
+                abort(403)
+    # ─────────────────────────────────────────────────────────────────────────
 
     old_status = item.resolution_status
     if old_status == new_status:
@@ -894,12 +911,11 @@ def resolve_item(item_id):
         return redirect(url_for('item_detail', item_id=item.id))
 
     item.resolution_status = new_status
-
     action = 'RESOLVED' if new_status == 'RETURNED' else 'STATUS_CHANGED'
     try:
         log_event(
             item.id, action,
-            note     = f'Updated by {current_user.username}',
+            note     = f'Updated by {current_user.username} [{current_user.role}]',
             from_val = old_status,
             to_val   = new_status,
         )
@@ -950,6 +966,105 @@ def dismiss_match(match_id):
 
     flash('Match dismissed.', 'info')
     return redirect(url_for('dashboard'))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ROUTES — ADMIN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/analytics')
+@login_required
+def admin_analytics():
+    """
+    Admin-only analytics dashboard.
+    Shows same-day retrieval rates, daily activity, handover stats,
+    user roster, and recent audit events.
+    """
+    if not current_user.is_admin:
+        abort(403)
+
+    # ── Overall totals ────────────────────────────────────────────────────────
+    total_items    = Item.query.count()
+    total_lost     = Item.query.filter_by(status='LOST').count()
+    total_found    = Item.query.filter_by(status='FOUND').count()
+    total_returned = Item.query.filter_by(resolution_status='RETURNED').count()
+    total_open     = Item.query.filter_by(resolution_status='OPEN').count()
+    total_secured  = Item.query.filter_by(resolution_status='SECURED').count()
+    total_users    = User.query.filter_by(role='USER').count()
+    total_staff    = User.query.filter(User.role.in_(['STAFF', 'ADMIN'])).count()
+
+    # ── Handover stats ─────────────────────────────────────────────────────────
+    handover_security    = Item.query.filter_by(handover_status='SECURITY').count()
+    handover_with_finder = Item.query.filter_by(handover_status='WITH_FINDER').count()
+    handover_left        = Item.query.filter_by(handover_status='LEFT_AT_LOCATION').count()
+
+    # ── Daily activity — last 7 days ──────────────────────────────────────────
+    today_start    = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    daily_activity = []
+    for i in range(6, -1, -1):
+        day_start = today_start - timedelta(days=i)
+        day_end   = day_start  + timedelta(days=1)
+        daily_activity.append({
+            'date':  day_start.strftime('%d %b'),
+            'lost':  Item.query.filter(
+                         Item.status == 'LOST',
+                         Item.date_reported >= day_start,
+                         Item.date_reported <  day_end).count(),
+            'found': Item.query.filter(
+                         Item.status == 'FOUND',
+                         Item.date_reported >= day_start,
+                         Item.date_reported <  day_end).count(),
+        })
+
+    # ── Same-day retrieval rate ────────────────────────────────────────────────
+    # % of RETURNED items where CREATED and RESOLVED logs share the same date.
+    resolved_logs = (ItemLog.query
+                     .filter_by(action='RESOLVED')
+                     .order_by(ItemLog.created_at.asc())
+                     .all())
+    same_day_count = 0
+    for rlog in resolved_logs:
+        created_log = (ItemLog.query
+                       .filter_by(item_id=rlog.item_id, action='CREATED')
+                       .order_by(ItemLog.created_at.asc())
+                       .first())
+        if created_log and created_log.created_at.date() == rlog.created_at.date():
+            same_day_count += 1
+    same_day_rate = (
+        int(same_day_count / len(resolved_logs) * 100) if resolved_logs else 0
+    )
+
+    # ── Staff roster ──────────────────────────────────────────────────────────
+    staff_users = (User.query
+                   .filter(User.role.in_(['STAFF', 'ADMIN']))
+                   .order_by(User.role.desc(), User.username.asc())
+                   .all())
+
+    # ── Recent audit log (last 25 events) ─────────────────────────────────────
+    recent_logs = (ItemLog.query
+                   .order_by(ItemLog.created_at.desc())
+                   .limit(25).all())
+
+    return render_template('admin_analytics.html',
+        total_items=total_items,
+        total_lost=total_lost,
+        total_found=total_found,
+        total_returned=total_returned,
+        total_open=total_open,
+        total_secured=total_secured,
+        total_users=total_users,
+        total_staff=total_staff,
+        handover_security=handover_security,
+        handover_with_finder=handover_with_finder,
+        handover_left=handover_left,
+        daily_activity=daily_activity,
+        same_day_rate=same_day_rate,
+        same_day_count=same_day_count,
+        total_resolved=len(resolved_logs),
+        recent_logs=recent_logs,
+        staff_users=staff_users,
+        now=datetime.utcnow(),
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1066,41 +1181,12 @@ def timesince_filter(dt: datetime) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  BOOTSTRAP & SCHEMA MIGRATIONS
+#  BOOTSTRAP
 # ═══════════════════════════════════════════════════════════════════════════════
 
 with app.app_context():
-    # Step 1 — create any new tables (ItemLog, Match, etc.)
     db.create_all()
-
-    # Step 2 — add new columns to existing tables
-    # db.create_all() never ALTERs existing tables; we do it safely here.
-    # Each migration is guarded by a column-existence check so it is
-    # completely idempotent across restarts.
-    def _col_exists(insp, table: str, column: str) -> bool:
-        return any(c['name'] == column for c in insp.get_columns(table))
-
-    insp = sa_inspect(db.engine)
-
-    with db.engine.begin() as conn:
-        # item.created_at — back-filled from date_reported
-        if not _col_exists(insp, 'item', 'created_at'):
-            conn.execute(text("ALTER TABLE item ADD COLUMN created_at DATETIME"))
-            conn.execute(text("UPDATE item SET created_at = date_reported"))
-
-        # item.resolution_status — back-filled to 'OPEN'
-        if not _col_exists(insp, 'item', 'resolution_status'):
-            conn.execute(text(
-                "ALTER TABLE item ADD COLUMN resolution_status VARCHAR(20) NOT NULL DEFAULT 'OPEN'"
-            ))
-
-        # user.created_at
-        if not _col_exists(insp, 'user', 'created_at'):
-            conn.execute(text("ALTER TABLE user ADD COLUMN created_at DATETIME"))
-            conn.execute(text("UPDATE user SET created_at = CURRENT_TIMESTAMP"))
-
     # Run image expiry on every startup to keep storage clean.
-    # The function is idempotent and very fast when there is nothing to clean.
     cleanup_old_images()
 
 
