@@ -15,34 +15,27 @@ env.bak/
 venv.bak/
 
 # ── Environment variables / secrets ──────────────────────────────────────────
-# Never commit secrets. Set KG_SECRET_KEY as a real env var before deploying.
+# Never commit secrets. Set DJANGO_SECRET_KEY as a real env var before deploying.
 .env
 .env.*
+*.local
 !.env.example
-
-# ── Flask instance folder ─────────────────────────────────────────────────────
-# Contains the live SQLite database and any instance-level config overrides.
-# Back up instance/kg_portal.db separately; never commit it.
-instance/
 
 # ── Django runtime data ───────────────────────────────────────────────────────
 backend/kg_portal.db
+backend/*.sqlite3
 backend/media/
 backend/staticfiles/
 
 # ── Node / frontend ───────────────────────────────────────────────────────────
 node_modules/
 frontend/dist/
-
-# ── User-uploaded media ───────────────────────────────────────────────────────
-# Runtime data — not source code. Back up out-of-band.
-# .gitkeep is excepted so the directory is tracked without its contents.
-static/uploads/*
-!static/uploads/.gitkeep
+frontend/.vite/
 
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
 logs/
+npm-debug.log*
 
 # ── Distribution / packaging ──────────────────────────────────────────────────
 dist/
