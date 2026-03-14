@@ -6,9 +6,18 @@ from .models import User
 class UserAdmin(BaseUserAdmin):
     list_display  = ('username', 'email', 'role', 'is_active', 'created_at')
     list_filter   = ('role', 'is_active')
-    fieldsets     = BaseUserAdmin.fieldsets + (
-        ('Portal Role', {'fields': ('role',)}),
+
+    # first_name/last_name are removed from the model — define fieldsets from scratch
+    fieldsets = (
+        (None,             {'fields': ('username', 'password')}),
+        ('Contact',        {'fields': ('email',)}),
+        ('Portal Role',    {'fields': ('role',)}),
+        ('Permissions',    {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates',{'fields': ('last_login',)}),
     )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ('Portal Role', {'fields': ('role',)}),
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields':  ('username', 'email', 'password1', 'password2', 'role'),
+        }),
     )
