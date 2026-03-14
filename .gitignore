@@ -25,6 +25,15 @@ venv.bak/
 # Back up instance/kg_portal.db separately; never commit it.
 instance/
 
+# ── Django runtime data ───────────────────────────────────────────────────────
+backend/kg_portal.db
+backend/media/
+backend/staticfiles/
+
+# ── Node / frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+
 # ── User-uploaded media ───────────────────────────────────────────────────────
 # Runtime data — not source code. Back up out-of-band.
 # .gitkeep is excepted so the directory is tracked without its contents.
