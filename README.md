@@ -1,8 +1,9 @@
 # KG Recovery Portal
 
-A multi-college campus **Lost & Found management web application** built with Flask.
-Students and staff report lost or found items, track their lifecycle through a resolution
-state machine, and let the built-in auto-match engine surface candidates automatically.
+A multi-college campus **Lost & Found management web application** built with a decoupled
+Django REST Framework backend and a React + Vite frontend.
+Students report lost or found items, staff manage cases end-to-end, and the built-in
+auto-match engine surfaces likely item pairs automatically.
 
 ---
 
@@ -10,20 +11,16 @@ state machine, and let the built-in auto-match engine surface candidates automat
 
 | Area | Detail |
 |---|---|
-| **Report items** | Submit Lost or Found reports with category, campus location zone, description, and an optional photo |
-| **Auto-Match Engine** | When a Found item is submitted, the engine scans all open Lost reports and scores matches by category (+3) and location (+2) |
+| **3-tier RBAC** | `USER` · `STAFF` · `ADMIN` — each role has a distinct portal view and permission set |
+| **Report items** | Submit Lost or Found reports with category, location, description, and an optional photo |
+| **Auto-Match Engine** | Scores open Lost/Found pairs by category (+3) and location (+2); minimum threshold 2 |
 | **Resolution state machine** | Every item moves through `OPEN → SECURED → RETURNED` independently of its Lost/Found type |
-| **Immutable audit trail** | Every significant event (created, edited, status change, match found) is recorded in `ItemLog` with actor and timestamp |
-| **Secure file uploads** | 2 MB hard limit · extension allowlist · magic-byte MIME verification · UUID-prefixed filenames |
-| **Pillow compression** | Every uploaded image is resized to ≤ 1024 px wide and re-encoded at quality 85 on save |
-| **30-day image expiry** | `cleanup_old_images()` deletes physical files for items > 30 days old; DB records are preserved so the text archive stays searchable |
-| **Server-side validation** | All inputs cleaned, length-capped, and validated against frozenset allowlists |
-| **Transactional safety** | Every `db.session.commit()` wrapped in `try/except` with `rollback()` |
-| **Today's Activity snapshot** | Dashboard shows a live banner of Lost / Found / Total counts since UTC midnight |
-| **Two-lane dashboard** | Lost and Found activity streams rendered in strictly separate columns |
-| **Custom error pages** | Branded 404, 403, and 500 pages; 413 redirects with a flash message |
-| **Feed filters** | Filter by status, category, and case state (`OPEN / SECURED / RETURNED`) simultaneously |
-| **Contact for verification** | Detail page shows reporter info and a `KGP-XXXXX` reference ID for security-desk handovers |
+| **Immutable audit trail** | Every significant event (created, edited, status change, match found) recorded in `ItemLog` with actor, role, and timestamp |
+| **Secure file uploads** | 2 MB hard limit · UUID-prefixed filenames · Pillow resize to ≤ 1024 px at quality 70 |
+| **30-day image expiry** | Management command deletes physical files for items > 30 days old; DB text records are preserved |
+| **JWT authentication** | SimpleJWT — 8 h access token, 7-day refresh token; auto-refresh on 401 in the frontend |
+| **Admin analytics** | Full dashboard: same-day retrieval rate, handover breakdown, staff roster, live audit log |
+| **Feed filters** | Filter by status, category, and free-text search; results are paginated |
 
 ---
 
@@ -31,13 +28,14 @@ state machine, and let the built-in auto-match engine surface candidates automat
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.11+, Flask 3.1.0 |
-| ORM | Flask-SQLAlchemy 3.1.1 (SQLite in development) |
-| Auth | Flask-Login 0.6.3 |
-| Security | Werkzeug 3.1.3 |
-| Image processing | Pillow 11.1.0 |
-| Frontend | Tailwind CSS (CDN), FontAwesome 6 Free (CDN), Vanilla JS |
-| Database | SQLite (file: `instance/kg_portal.db`) |
+| Backend | Python 3.11, Django 5.0.3, Django REST Framework 3.15 |
+| Auth | djangorestframework-simplejwt 5.3 (Bearer JWT) |
+| Database | SQLite (`backend/kg_portal.db`) via Django ORM |
+| Image processing | Pillow 10.2 — resize + re-encode on model save |
+| CORS | django-cors-headers 4.3 |
+| Frontend | React 18, Vite 5, React Router v6 |
+| Styling | Tailwind CSS 3, FontAwesome 6 (CDN) |
+| HTTP client | Axios with JWT interceptors + auto-refresh |
 
 ---
 
@@ -45,30 +43,49 @@ state machine, and let the built-in auto-match engine surface candidates automat
 
 ```
 Lost-Found-Portal/
-├── app.py                        # Single-file Flask application
-├── requirements.txt
-├── instance/
-│   └── kg_portal.db              # SQLite database (git-ignored)
-├── static/
-│   ├── css/
-│   │   └── style.css             # Custom CSS — slide animations, stat cards, timeline
-│   ├── js/
-│   │   └── main.js               # Global JS — mobile sidebar, countUp, handover toggle
-│   └── uploads/                  # User-uploaded images (git-ignored, .gitkeep tracked)
-│       └── .gitkeep
-└── templates/
-    ├── base.html                 # Master layout — links style.css and main.js
-    ├── dashboard.html            # Today snapshot · Two-lane streams · Match alerts
-    ├── feed.html                 # Searchable grid with Status / Category / Case filters
-    ├── detail.html               # Timeline · Audit trail · Resolution controls
-    ├── report.html               # Drag-drop upload · Handover section (animated)
-    ├── edit.html                 # Edit form — synced handover section
-    ├── login.html
-    ├── register.html
-    └── errors/
-        ├── 403.html
-        ├── 404.html
-        └── 500.html
+├── backend/
+│   ├── manage.py
+│   ├── requirements.txt
+│   ├── kg_portal.db                  # SQLite database (git-ignored)
+│   ├── core/
+│   │   ├── settings.py               # Django settings, JWT config, CORS
+│   │   ├── urls.py                   # Root URL conf
+│   │   └── wsgi.py
+│   ├── users/
+│   │   ├── models.py                 # Custom User — role: USER / STAFF / ADMIN
+│   │   ├── serializers.py            # Register, Login, UserBrief serializers
+│   │   ├── views.py                  # RegisterView, LoginView, MeView
+│   │   └── urls.py                   # /api/auth/register|login|me|refresh/
+│   └── items/
+│       ├── models.py                 # Item, ItemLog, Match + Pillow hook
+│       ├── permissions.py            # IsStaffOrAdmin, IsAdminRole, IsOwnerOrStaff
+│       ├── serializers.py            # Item, ItemList, ItemLog, Match serializers
+│       ├── views.py                  # All item views with RBAC, dashboard, analytics
+│       ├── urls.py                   # All item/match/analytics endpoints
+│       └── management/commands/
+│           └── cleanup_images.py     # 30-day image expiry command
+└── frontend/
+    ├── package.json
+    ├── vite.config.js                # Proxies /api and /media to localhost:8000
+    ├── tailwind.config.js
+    └── src/
+        ├── App.jsx                   # Routes with role-based redirect
+        ├── api/axios.js              # Axios + JWT interceptors
+        ├── context/AuthContext.jsx   # login / register / logout
+        ├── components/
+        │   ├── Layout.jsx            # Sidebar + header wrapper
+        │   ├── Sidebar.jsx           # Role-aware nav links
+        │   ├── ItemCard.jsx          # Card for feed/list views
+        │   └── ProtectedRoute.jsx    # Auth + role guard
+        └── pages/
+            ├── LandingPage.jsx       # Login / register toggle
+            ├── Dashboard.jsx         # STAFF/ADMIN: stat cards + dual-lane feed
+            ├── ReportCenter.jsx      # USER: my reports, active/resolved split
+            ├── Feed.jsx              # Public item feed with filters
+            ├── ItemDetail.jsx        # Full item view + resolve form + audit log
+            ├── ReportItem.jsx        # Create report form
+            ├── EditItem.jsx          # Edit report form
+            └── AdminAnalytics.jsx    # ADMIN: full analytics dashboard
 ```
 
 ---
@@ -81,80 +98,134 @@ Lost-Found-Portal/
 git clone <repo-url>
 cd Lost-Found-Portal
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/Scripts/activate   # Windows
+source venv/bin/activate        # macOS / Linux
 ```
 
-### 2. Install dependencies
+### 2. Install backend dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
-### 3. Set environment variables
+### 3. Configure environment variables
 
-| Variable | Required | Description |
+Create `backend/.env` (never committed):
+
+```env
+DJANGO_SECRET_KEY=your-random-64-char-secret-key
+DEBUG=True
+```
+
+Generate a secret key:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+> The server starts without `.env` but uses an insecure fallback key and prints a warning.
+> **Never deploy without setting `DJANGO_SECRET_KEY`.**
+
+### 4. Run database migrations
+
+```bash
+cd backend
+python manage.py migrate
+```
+
+### 5. Create a superuser (ADMIN account)
+
+```bash
+python manage.py createsuperuser
+```
+
+Then in the Django admin (`http://localhost:8000/admin/`) set the user's **role** to `ADMIN`.
+
+### 6. Install frontend dependencies
+
+```bash
+cd ../frontend
+npm install
+```
+
+---
+
+## Running the Project
+
+Two terminals are required — one for each server.
+
+**Terminal 1 — Django backend:**
+
+```bash
+cd Lost-Found-Portal
+source venv/Scripts/activate   # Windows
+cd backend && python manage.py runserver
+# → http://127.0.0.1:8000
+```
+
+**Terminal 2 — React frontend:**
+
+```bash
+cd Lost-Found-Portal/frontend
+npm run dev
+# → http://localhost:5173
+```
+
+Open **`http://localhost:5173`** in your browser.
+Vite proxies all `/api` and `/media` requests to the Django server — no CORS issues during development.
+
+---
+
+## Role-Based Access
+
+| Role | Home | Permissions |
 |---|---|---|
-| `KG_SECRET_KEY` | **Yes (production)** | Flask session signing key — use a random 64-char string |
-| `DATABASE_URL` | No | SQLAlchemy URI; defaults to `sqlite:///kg_portal.db` |
+| `USER` | `/report-center` | Create/edit/delete own reports; resolve own items (if not Security-held) |
+| `STAFF` | `/dashboard` | All USER permissions + resolve any item including Security-held; manage handover and status |
+| `ADMIN` | `/dashboard` | All STAFF permissions + access analytics; bypasses all RBAC gates |
 
-```bash
-# bash / zsh
-export KG_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+### Resolve gate (exact logic)
 
-# Windows PowerShell
-$env:KG_SECRET_KEY = python -c "import secrets; print(secrets.token_hex(32))"
 ```
-
-> The app starts without `KG_SECRET_KEY` but prints `[WARNING]` to stderr and uses an
-> insecure hardcoded fallback. **Never deploy without setting this variable.**
-
-### 4. Run
-
-```bash
-python app.py
-```
-
-The server starts at `http://127.0.0.1:5000`.
-
-The database, schema migrations, and image expiry all run automatically at startup —
-no manual `flask db upgrade` required.
-
----
-
-## CLI Commands
-
-```bash
-# Manually purge expired images (also runs automatically on every startup)
-flask cleanup-images
+ADMIN           → always allowed
+STAFF           → allowed for any item, any handover state
+USER (owner)    → allowed only if handover_status ≠ 'SECURITY'
+USER (non-owner)→ denied
 ```
 
 ---
 
-## Image Pipeline
+## API Endpoints
 
-Every uploaded image goes through a two-stage pipeline:
-
-1. **Validation** — extension allowlist + magic-byte MIME check + 2 MB Werkzeug limit
-2. **Compression** — Pillow resizes to ≤ 1024 px wide and re-encodes:
-   - JPEG / WEBP → `quality=85`, RGB normalised
-   - PNG → lossless resize, transparency preserved
-   - GIF → skipped (animation frames would break)
-
-After 30 days the physical file is deleted and `image_filename` is set to `None`.
-The database record itself is never deleted — the text archive remains fully searchable.
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/register/` | public | Register + receive JWT pair |
+| POST | `/api/auth/login/` | public | Login + receive JWT pair |
+| GET/PATCH | `/api/auth/me/` | auth | Current user profile |
+| POST | `/api/auth/refresh/` | public | Refresh access token |
+| GET | `/api/items/` | public | Item feed (search, filter, paginate) |
+| POST | `/api/items/` | auth | Create a report |
+| GET/PATCH/DELETE | `/api/items/:id/` | varies | Item detail |
+| POST | `/api/items/:id/resolve/` | auth + RBAC | Mark item returned |
+| PATCH | `/api/items/:id/handover/` | STAFF/ADMIN | Update handover status |
+| PATCH | `/api/items/:id/status/` | STAFF/ADMIN | Change resolution status |
+| GET | `/api/items/mine/` | auth | Current user's own reports |
+| GET | `/api/matches/` | STAFF/ADMIN | Unreviewed auto-matches |
+| POST | `/api/matches/:id/review/` | STAFF/ADMIN | Mark a match reviewed |
+| GET | `/api/dashboard/` | STAFF/ADMIN | Live counts + recent items |
+| GET | `/api/analytics/` | ADMIN | Full analytics payload |
 
 ---
 
-## Database Migrations
+## Auto-Match Engine
 
-No Flask-Migrate. New columns are applied at startup via idempotent `ALTER TABLE` guards:
+When a Lost or Found item is saved, `run_auto_match()` runs immediately:
 
-```python
-if not _col_exists(insp, 'item', 'resolution_status'):
-    conn.execute(text("ALTER TABLE item ADD COLUMN resolution_status ..."))
-```
-
-Safe to run against both a fresh and an existing database.
+- Scans all open reports of the opposite type
+- Scores each pair: **+3** exact category · **+2** exact location
+- Minimum score **2** required to create a `Match` row
+- Persists matches idempotently via `unique_together`
+- Writes a `MATCH_FOUND` entry to `ItemLog` on both items
 
 ---
 
@@ -162,32 +233,29 @@ Safe to run against both a fresh and an existing database.
 
 ```
 OPEN  ──►  SECURED  ──►  RETURNED
-  ▲            │
-  └────────────┘  (reopen if custody is lost or return was incorrect)
 ```
 
-The item owner controls transitions from the detail page. Every transition is recorded
-in `ItemLog` with `from_value` and `to_value`.
+Every transition is recorded in `ItemLog` with `from_value`, `to_value`, actor, and role.
+DB records are never deleted — the full text archive remains searchable indefinitely.
 
 ---
 
-## Auto-Match Engine
+## Management Commands
 
-When a **Found** item is reported, `run_auto_match()` runs immediately after commit:
+```bash
+# Purge image files for items reported more than 30 days ago
+python manage.py cleanup_images
+```
 
-- Scans all open **Lost** reports
-- Scores each pair: **+3** exact category · **+2** exact location (max 5 — "Strong Match")
-- Persists `Match` rows idempotently via `UniqueConstraint`
-- Records a `MATCH_FOUND` entry in `ItemLog`
-
-Pending alerts appear on the dashboard for the owner of the matched Lost report.
+Schedule this with cron or a task scheduler for automatic expiry.
 
 ---
 
-## Security Notes
+## Image Pipeline
 
-- All form input sanitised via `clean_text()` and validated against frozenset allowlists
-- File uploads: extension allowlist → magic-byte MIME check → UUID-prefixed `secure_filename`
-- `MAX_CONTENT_LENGTH = 2 MB` enforced at the Werkzeug level (413 handler redirects gracefully)
-- `SECRET_KEY` sourced from `KG_SECRET_KEY` env var with loud fallback warning
-- Ownership checks (`item.user_id != current_user.id`) guard all mutating routes; violations return 403
+1. **Upload** — UUID-prefixed filename prevents enumeration and collisions
+2. **Compress** — Pillow resizes to ≤ 1024 px wide and re-encodes on model save:
+   - JPEG / WEBP → `quality=70`, RGB normalised
+   - PNG → lossless resize, transparency preserved
+   - GIF → skipped (animation frames would break)
+3. **Expiry** — physical file deleted after 30 days; `image` field set to `null`
