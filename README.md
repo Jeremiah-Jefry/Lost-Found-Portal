@@ -1,261 +1,117 @@
-# KG Recovery Portal
+# 🔍 KG Community Recovery Portal
+> **Sleek. Professional. Reliable.**
 
-A multi-college campus **Lost & Found management web application** built with a decoupled
-Django REST Framework backend and a React + Vite frontend.
-Students report lost or found items, staff manage cases end-to-end, and the built-in
-auto-match engine surfaces likely item pairs automatically.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Django](https://img.shields.io/badge/Django-5.0+-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
+[![React](https://img.shields.io/badge/React-18.0+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
+[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-3.0+-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
----
-
-## Features
-
-| Area | Detail |
-|---|---|
-| **3-tier RBAC** | `USER` · `STAFF` · `ADMIN` — each role has a distinct portal view and permission set |
-| **Report items** | Submit Lost or Found reports with category, location, description, and an optional photo |
-| **Auto-Match Engine** | Scores open Lost/Found pairs by category (+3) and location (+2); minimum threshold 2 |
-| **Resolution state machine** | Every item moves through `OPEN → SECURED → RETURNED` independently of its Lost/Found type |
-| **Immutable audit trail** | Every significant event (created, edited, status change, match found) recorded in `ItemLog` with actor, role, and timestamp |
-| **Secure file uploads** | 2 MB hard limit · UUID-prefixed filenames · Pillow resize to ≤ 1024 px at quality 70 |
-| **30-day image expiry** | Management command deletes physical files for items > 30 days old; DB text records are preserved |
-| **JWT authentication** | SimpleJWT — 8 h access token, 7-day refresh token; auto-refresh on 401 in the frontend |
-| **Admin analytics** | Full dashboard: same-day retrieval rate, handover breakdown, staff roster, live audit log |
-| **Feed filters** | Filter by status, category, and free-text search; results are paginated |
+A high-end, decoupled **Lost & Found Management System** tailored for the KG College campus. This portal transitions from the basic "form-submission" model to a state-of-the-art **Interactive Dashboard** experience, ensuring students and staff can recover items with maximum efficiency and minimal friction.
 
 ---
 
-## Tech Stack
+## 🏛️ Project Vision
+Built as a solo high-speed MVP to demonstrate technical excellence. The portal focuses on high-readability (Clean White Theme), strict data integrity (Django REST), and a snappy, reactive user interface (React.js).
 
-| Layer | Technology |
-|---|---|
-| Backend | Python 3.11, Django 5.0.3, Django REST Framework 3.15 |
-| Auth | djangorestframework-simplejwt 5.3 (Bearer JWT) |
-| Database | SQLite (`backend/kg_portal.db`) via Django ORM |
-| Image processing | Pillow 10.2 — resize + re-encode on model save |
-| CORS | django-cors-headers 4.3 |
-| Frontend | React 18, Vite 5, React Router v6 |
-| Styling | Tailwind CSS 3, FontAwesome 6 (CDN) |
-| HTTP client | Axios with JWT interceptors + auto-refresh |
+### Key Architectural Pillars
+- **Decoupled Symmetry**: React frontend communicates with Django REST Framework via stateless JWT.
+- **Hierarchical Governance**: 3-tier Role-Based Access Control (Admin, Staff, User).
+- **Automated Hygiene**: Image compression at the source and automated 30-day data purging.
 
 ---
 
-## Project Structure
+## ✨ Features & Logic
 
-```
+### 🏦 Role-Based Access Control (RBAC)
+| Role | Landing Page | Key Permissions |
+| :--- | :--- | :--- |
+| **Admin** | `/dashboard` | System Analytics, User Promotion, Global Data Access |
+| **Staff** | `/dashboard` | Security Handover Authority, Resolution Management |
+| **User** | `/report-center` | Personal Reporting, Public Feed Access, Self-Resolution |
+
+### 🛠️ Smart Handover & Resolution
+- **Multi-State Handover**: Reports track if an item is `Left at Location`, `With Finder`, or `Handed to Security`.
+- **The Security Gate**: Once marked as "Handed to Security", the item becomes **locked** for regular users. Only **Staff** can verify the identity and mark it as `RESOLVED`.
+- **Dynamic Forms**: UI intelligently reveals security details only when the "Security Handover" status is selected.
+
+### 🖼️ High-Performance Media Pipeline
+- **Auto-Compression**: Every image is intercepted on upload, resized to **1024px**, and re-encoded at **70% quality** to save server bandwidth.
+- **Auto-Purge**: A background management command clears physical files older than 30 days while keeping DB records for archival history.
+
+---
+
+## 🎨 UI/UX Specifications
+- **Palette**: `Pure White (#ffffff)` / `Slate Light (#f8fafc)` / `Electric Blue (#3b82f6)`.
+- **Components**: Glass-morphism sidebar, crisp metric cards, dual-stream vertical feeds.
+- **Icons**: Lucide-React & FontAwesome 6.
+
+---
+
+## 📂 System Architecture
+
+```bash
 Lost-Found-Portal/
-├── backend/
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── kg_portal.db                  # SQLite database (git-ignored)
-│   ├── core/
-│   │   ├── settings.py               # Django settings, JWT config, CORS
-│   │   ├── urls.py                   # Root URL conf
-│   │   └── wsgi.py
-│   ├── users/
-│   │   ├── models.py                 # Custom User — role: USER / STAFF / ADMIN
-│   │   ├── serializers.py            # Register, Login, UserBrief serializers
-│   │   ├── views.py                  # RegisterView, LoginView, MeView
-│   │   └── urls.py                   # /api/auth/register|login|me|refresh/
-│   └── items/
-│       ├── models.py                 # Item, ItemLog, Match + Pillow hook
-│       ├── permissions.py            # IsStaffOrAdmin, IsAdminRole, IsOwnerOrStaff
-│       ├── serializers.py            # Item, ItemList, ItemLog, Match serializers
-│       ├── views.py                  # All item views with RBAC, dashboard, analytics
-│       ├── urls.py                   # All item/match/analytics endpoints
-│       └── management/commands/
-│           └── cleanup_images.py     # 30-day image expiry command
-└── frontend/
-    ├── package.json
-    ├── vite.config.js                # Proxies /api and /media to localhost:8000
-    ├── tailwind.config.js
-    └── src/
-        ├── App.jsx                   # Routes with role-based redirect
-        ├── api/axios.js              # Axios + JWT interceptors
-        ├── context/AuthContext.jsx   # login / register / logout
-        ├── components/
-        │   ├── Layout.jsx            # Sidebar + header wrapper
-        │   ├── Sidebar.jsx           # Role-aware nav links
-        │   ├── ItemCard.jsx          # Card for feed/list views
-        │   └── ProtectedRoute.jsx    # Auth + role guard
-        └── pages/
-            ├── LandingPage.jsx       # Login / register toggle
-            ├── Dashboard.jsx         # STAFF/ADMIN: stat cards + dual-lane feed
-            ├── ReportCenter.jsx      # USER: my reports, active/resolved split
-            ├── Feed.jsx              # Public item feed with filters
-            ├── ItemDetail.jsx        # Full item view + resolve form + audit log
-            ├── ReportItem.jsx        # Create report form
-            ├── EditItem.jsx          # Edit report form
-            └── AdminAnalytics.jsx    # ADMIN: full analytics dashboard
+├── backend/                  # Django REST Framework Engine
+│   ├── core/                 # JWT Auth & Security Configuration
+│   ├── users/                # Identity & RBAC Logic
+│   ├── items/                # Business Logic & Image Processing
+│   └── media/                # Managed Storage (Compressed Images)
+├── frontend/                 # React + Vite Cockpit
+│   ├── src/pages/            # Dashboard, ReportCenter, Feed
+│   ├── src/components/       # ProtectedRoute, Sidebar, CustomCards
+│   └── src/api/              # Axios Interceptors (JWT Handling)
+└── venv/                     # Python 3.11 Environment
 ```
 
 ---
 
-## Setup
+## ⚡ Quick Start
 
-### 1. Clone and create a virtual environment
-
+### 1. Engine Setup (Backend)
 ```bash
-git clone <repo-url>
+# Enter project root
 cd Lost-Found-Portal
+
+# Setup Environment
 python -m venv venv
-source venv/Scripts/activate   # Windows
-source venv/bin/activate        # macOS / Linux
-```
+# Windows:
+venv\Scripts\activate
 
-### 2. Install backend dependencies
-
-```bash
+# Install & Migrate
 pip install -r backend/requirements.txt
-```
-
-### 3. Configure environment variables
-
-Create `backend/.env` (never committed):
-
-```env
-DJANGO_SECRET_KEY=your-random-64-char-secret-key
-DEBUG=True
-```
-
-Generate a secret key:
-
-```bash
-python -c "import secrets; print(secrets.token_hex(32))"
-```
-
-> The server starts without `.env` but uses an insecure fallback key and prints a warning.
-> **Never deploy without setting `DJANGO_SECRET_KEY`.**
-
-### 4. Run database migrations
-
-```bash
 cd backend
 python manage.py migrate
 ```
 
-### 5. Create a superuser (ADMIN account)
-
-```bash
-python manage.py createsuperuser
-```
-
-Then in the Django admin (`http://localhost:8000/admin/`) set the user's **role** to `ADMIN`.
-
-### 6. Install frontend dependencies
-
+### 2. Cockpit Setup (Frontend)
 ```bash
 cd ../frontend
 npm install
-```
-
----
-
-## Running the Project
-
-Two terminals are required — one for each server.
-
-**Terminal 1 — Django backend:**
-
-```bash
-cd Lost-Found-Portal
-source venv/Scripts/activate   # Windows
-cd backend && python manage.py runserver
-# → http://127.0.0.1:8000
-```
-
-**Terminal 2 — React frontend:**
-
-```bash
-cd Lost-Found-Portal/frontend
 npm run dev
-# → http://localhost:5173
 ```
 
-Open **`http://localhost:5173`** in your browser.
-Vite proxies all `/api` and `/media` requests to the Django server — no CORS issues during development.
+### 3. Identity Setup (Admin)
+The portal comes with a pre-configured Master Admin:
+- **URL**: `http://localhost:8000/admin`
+- **Username**: `admin`
+- **Password**: `admin123`
 
 ---
 
-## Role-Based Access
-
-| Role | Home | Permissions |
-|---|---|---|
-| `USER` | `/report-center` | Create/edit/delete own reports; resolve own items (if not Security-held) |
-| `STAFF` | `/dashboard` | All USER permissions + resolve any item including Security-held; manage handover and status |
-| `ADMIN` | `/dashboard` | All STAFF permissions + access analytics; bypasses all RBAC gates |
-
-### Resolve gate (exact logic)
-
-```
-ADMIN           → always allowed
-STAFF           → allowed for any item, any handover state
-USER (owner)    → allowed only if handover_status ≠ 'SECURITY'
-USER (non-owner)→ denied
-```
-
----
-
-## API Endpoints
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register/` | public | Register + receive JWT pair |
-| POST | `/api/auth/login/` | public | Login + receive JWT pair |
-| GET/PATCH | `/api/auth/me/` | auth | Current user profile |
-| POST | `/api/auth/refresh/` | public | Refresh access token |
-| GET | `/api/items/` | public | Item feed (search, filter, paginate) |
-| POST | `/api/items/` | auth | Create a report |
-| GET/PATCH/DELETE | `/api/items/:id/` | varies | Item detail |
-| POST | `/api/items/:id/resolve/` | auth + RBAC | Mark item returned |
-| PATCH | `/api/items/:id/handover/` | STAFF/ADMIN | Update handover status |
-| PATCH | `/api/items/:id/status/` | STAFF/ADMIN | Change resolution status |
-| GET | `/api/items/mine/` | auth | Current user's own reports |
-| GET | `/api/matches/` | STAFF/ADMIN | Unreviewed auto-matches |
-| POST | `/api/matches/:id/review/` | STAFF/ADMIN | Mark a match reviewed |
-| GET | `/api/dashboard/` | STAFF/ADMIN | Live counts + recent items |
-| GET | `/api/analytics/` | ADMIN | Full analytics payload |
-
----
-
-## Auto-Match Engine
-
-When a Lost or Found item is saved, `run_auto_match()` runs immediately:
-
-- Scans all open reports of the opposite type
-- Scores each pair: **+3** exact category · **+2** exact location
-- Minimum score **2** required to create a `Match` row
-- Persists matches idempotently via `unique_together`
-- Writes a `MATCH_FOUND` entry to `ItemLog` on both items
-
----
-
-## Resolution State Machine
-
-```
-OPEN  ──►  SECURED  ──►  RETURNED
-```
-
-Every transition is recorded in `ItemLog` with `from_value`, `to_value`, actor, and role.
-DB records are never deleted — the full text archive remains searchable indefinitely.
-
----
-
-## Management Commands
-
+## 🧹 Maintenance Commands
+Keep your server lean by running the daily purge:
 ```bash
-# Purge image files for items reported more than 30 days ago
-python manage.py cleanup_images
+python backend/manage.py purge_images
 ```
-
-Schedule this with cron or a task scheduler for automatic expiry.
 
 ---
 
-## Image Pipeline
+## 👨‍💻 Developer Context
+- **Lead Architect**: Jeremiah (Solo Project)
+- **Target Audience**: KG College Campus
+- **Mentorship**: For Sathish Sir's Review
 
-1. **Upload** — UUID-prefixed filename prevents enumeration and collisions
-2. **Compress** — Pillow resizes to ≤ 1024 px wide and re-encodes on model save:
-   - JPEG / WEBP → `quality=70`, RGB normalised
-   - PNG → lossless resize, transparency preserved
-   - GIF → skipped (animation frames would break)
-3. **Expiry** — physical file deleted after 30 days; `image` field set to `null`
+---
+> [!IMPORTANT]
+> This portal is configured for local development. For production deployment, ensure `DEBUG=False` and update `CORS_ALLOWED_ORIGINS` in `settings.py`.
