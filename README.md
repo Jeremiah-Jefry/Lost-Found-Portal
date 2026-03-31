@@ -1,11 +1,4 @@
 # KG Community Recovery Portal
-> **Sleek. Professional. Reliable.**
-
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Django](https://img.shields.io/badge/Django-5.0+-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
-[![React](https://img.shields.io/badge/React-18.0+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
-[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind-3.0+-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
 A high-end, decoupled **Lost & Found Management System** tailored for the KG College campus. This portal transitions from the basic "form-submission" model to a state-of-the-art **Interactive Dashboard** experience, ensuring students and staff can recover items with maximum efficiency and minimal friction.
 
