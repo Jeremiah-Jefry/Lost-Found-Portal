@@ -1,4 +1,4 @@
-# KG Community Recovery Portal
+#  Community Recovery Portal
 
 A high-end, decoupled **Lost & Found Management System** tailored for the KG College campus. This portal transitions from the basic "form-submission" model to a state-of-the-art **Interactive Dashboard** experience, ensuring students and staff can recover items with maximum efficiency and minimal friction.
 
