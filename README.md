@@ -108,3 +108,5 @@ python backend/manage.py purge_images
 ---
 > [!IMPORTANT]
 > This portal is configured for local development. For production deployment, ensure `DEBUG=False` and update `CORS_ALLOWED_ORIGINS` in `settings.py`.
+
+---
